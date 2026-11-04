@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments :: head (titulo='Lista de Equipos')}"></head>
+<body>
+<div class="container mt-5">
+    <div th:replace="~{fragments :: navbar}"></div>
+    <h2 class="mb-4">Equipos</h2>
+
+    <!-- Sección para crear un nuevo equipo -->
+        <div class="card-body">
+            <form th:action="@{/equipos/crear}" method="post" class="row g-3 align-items-center">
+                <div class="col-md-9 col-sm-8">
+                    <label for="nombreEquipo" class="visually-hidden">Nombre del Equipo</label>
+                    <input type="text"
+                           id="nombreEquipo"
+                           name="nombre"
+                           class="form-control"
+                           placeholder="Ingresa el nombre del nuevo equipo"
+                           required>
+                </div>
+                <div class="col-md-3 col-sm-4">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-plus-circle"></i> Crear Equipo
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    <table class="table table-striped align-middle">
+        <thead class="table-dark">
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Nombre del Equipo</th>
+            <th scope="col" class="text-center">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Bloque contenedor por equipo -->
+        <th:block th:each="equipo : ${equipos}">
+            <tr>
+            <td th:text="${equipo.id}">1</td>
+            <td th:text="${equipo.nombre}">Proyecto 1</td>
+            <td class="text-center">
+                <!-- Botón Desplegar -->
+                <button class="btn btn-outline-primary btn-sm mr-1"
+                        type="button"
+                        data-toggle="collapse"
+                        th:attr="data-target='#collapse-equipo-' + ${equipo.id}"
+                        aria-expanded="false">
+                    Ver Usuarios
+                </button>
+
+                <!-- Botón Salir del Equipo (Comprueba si la lista contiene la ID del usuario) -->
+                <form th:if="${#lists.contains(equipo.usuarios.![id], session.idUsuarioLogeado)}"
+                      th:action="@{/equipos/{id}/salir(id=${equipo.id})}"
+                      method="post"
+                      class="d-inline">
+                    <button type="submit" class="btn btn-outline-danger btn-sm mr-1">Salir del Equipo</button>
+                </form>
+
+                <!-- Botón Unirse al Equipo -->
+                <form th:if="${!#lists.contains(equipo.usuarios.![id], session.idUsuarioLogeado)}"
+                      th:action="@{/equipos/{id}/unirse(id=${equipo.id})}"
+                      method="post"
+                      class="d-inline">
+                    <button type="submit" class="btn btn-outline-success btn-sm mr-1">Unirse al Equipo</button>
+                </form>
+
+                <!-- Acciones de administración, separadas de las del usuario -->
+                <span th:if="${session.esAdmin != null and session.esAdmin}"
+                      class="d-inline-block border-left pl-2 ml-1">
+                    <!-- Botón Modificar -->
+                    <button class="btn btn-outline-warning btn-sm mr-1"
+                            type="button"
+                            data-toggle="collapse"
+                            th:attr="data-target='#editar-equipo-' + ${equipo.id}"
+                            aria-expanded="false">
+                        Modificar
+                    </button>
+
+                    <!-- Botón Eliminar -->
+                    <form th:action="@{/equipos/{id}/delete(id=${equipo.id})}"
+                          method="post"
+                          class="d-inline"
+                          onsubmit="return confirm('¿Seguro que quieres eliminar este equipo?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    </form>
+                </span>
+            </td>
+        </tr>
+
+            <!-- Fila desplegable con el formulario de modificación (solo administradores) -->
+            <tr th:if="${session.esAdmin != null and session.esAdmin}">
+                <td colspan="3" class="p-0 border-0">
+                    <div class="collapse p-3 bg-light" th:id="'editar-equipo-' + ${equipo.id}">
+                        <form th:action="@{/equipos/{id}/update(id=${equipo.id})}" method="post" class="form-inline">
+                            <label th:for="'nombre-equipo-' + ${equipo.id}" class="mr-2">Nuevo nombre</label>
+                            <input type="text"
+                                   th:id="'nombre-equipo-' + ${equipo.id}"
+                                   name="nombre"
+                                   th:value="${equipo.nombre}"
+                                   class="form-control form-control-sm mr-2"
+                                   required>
+                            <button type="submit" class="btn btn-warning btn-sm">Guardar cambios</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Fila contenedora del desplegable -->
+            <tr>
+                <td colspan="3" class="p-0 border-0">
+                    <div class="collapse p-3 bg-light"
+                         th:id="'collapse-equipo-' + ${equipo.id}"
+                         th:with="usuarios=${(equipo.usuarios != null and !#lists.isEmpty(equipo.usuarios)) ? equipo.usuarios : @equipoService.usuariosEquipo(equipo.id)}">
+                        <table class="table table-sm table-bordered mb-0 bg-white">
+                            <thead class="table-secondary">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- Recorremos la lista de usuarios ya cargada en la DTO o consultada al servicio -->
+                            <tr th:each="usuario : ${usuarios}">
+                                <td th:text="${usuario.id}">1</td>
+                                <td th:text="${usuario.nombre}">Nombre Ejemplo</td>
+                                <td th:text="${usuario.email}">ejemplo@email.com</td>
+                            </tr>
+                            <!-- Mensaje cuando el equipo no tiene usuarios -->
+                            <tr th:if="${#lists.isEmpty(usuarios)}">
+                                <td colspan="3" class="text-muted text-center py-2">Sin usuarios registrados en este equipo.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </th:block>
+        <!-- Mensaje si la lista de equipos está vacía -->
+        <tr th:if="${#lists.isEmpty(equipos)}">
+            <td colspan="3" class="text-center text-muted py-3">No hay equipos creados.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div th:replace="~{fragments :: javascript}"></div>
+</body>
+</html>

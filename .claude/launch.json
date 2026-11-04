@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "todolist",
+      "runtimeExecutable": "C:\\Users\\Usuario\\IdeaProjects\\MADS-TODOLIST\\mvnw.cmd",
+      "runtimeArgs": ["spring-boot:run"],
+      "cwd": "C:\\Users\\Usuario\\IdeaProjects\\MADS-TODOLIST",
+      "env": {
+        "JAVA_HOME": "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2026.2.3\\jbr",
+        "MAVEN_OPTS": "-Djavax.net.ssl.trustStoreType=Windows-ROOT"
+      },
+      "port": 8081
+    }
+  ]
+}

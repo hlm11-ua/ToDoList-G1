@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments :: head (titulo='Detalles del Usuario')"></head>
+<body>
+
+<div class="container my-5">
+    <div th:replace="fragments :: navbar"></div>
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title h5 mb-0">Detalles del Usuario</h3>
+                    <span class="badge bg-light text-primary" th:text="'ID: ' + ${usuario.id}">ID: 1</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 row">
+                        <label class="col-sm-4 col-form-label fw-bold">Nombre:</label>
+                        <div class="col-sm-8">
+                            <p class="form-control-plaintext" th:text="${usuario.nombre}">Nombre del usuario</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-3 row">
+                        <label class="col-sm-4 col-form-label fw-bold">Email:</label>
+                        <div class="col-sm-8">
+                            <p class="form-control-plaintext" th:text="${usuario.email}">usuario@email.com</p>
+                        </div>
+                    </div>
+                    <hr th:if="${usuario.fechaNacimiento != null}">
+                    <div class="mb-3 row" th:if="${usuario.fechaNacimiento != null}">
+                        <label class="col-sm-4 col-form-label fw-bold">Fecha de Nacimiento:</label>
+                        <div class="col-sm-8">
+                            <p class="form-control-plaintext"
+                               th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}">01/01/2000</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-end bg-light" th:if="${EsAdmin}">
+                    <a th:href="@{/registrados}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a la lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="fragments :: javascript"></div>
+</body>
+</html>
