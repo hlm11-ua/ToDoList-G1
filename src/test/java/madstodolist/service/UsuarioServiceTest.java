@@ -216,14 +216,44 @@ public class UsuarioServiceTest {
                 .containsExactlyInAnyOrder("user@ua", "usuario2@ua");
     }
 
+    // Tests de edición de usuario: solo el propio usuario puede editarse
+
+    private UsuarioData datosEdicion(Long id, String nombre) {
+        UsuarioData datos = new UsuarioData();
+        datos.setId(id);
+        datos.setNombre(nombre);
+        datos.setEmail("user@ua");
+        datos.setPassword("123");
+        return datos;
+    }
+
     @Test
-    public void servicioFindAllConBDVaciaDevuelveListaVacia() {
+    public void editarUsuarioPropioActualizaLosDatos() {
+        // GIVEN
+        Long usuarioId = addUsuarioBD();
+
         // WHEN
-        // Si no hay usuarios en la BD
-        Iterable<UsuarioData> usuarios = usuarioService.findAll();
+        // el propio usuario edita su nombre
+        UsuarioData editado = usuarioService.editarUsuario(datosEdicion(usuarioId, "Nombre Nuevo"));
 
         // THEN
-        // Devuelve una colección vacía (no nula)
-        assertThat(usuarios).isEmpty();
+        // se devuelve y se guarda el usuario con los datos nuevos
+        assertThat(editado.getId()).isEqualTo(usuarioId);
+        assertThat(editado.getNombre()).isEqualTo("Nombre Nuevo");
+        assertThat(usuarioService.findById(usuarioId).getNombre()).isEqualTo("Nombre Nuevo");
+    }
+
+    @Test
+    public void editarUsuarioPropioConDatosErroneosLanzaExcepcion() {
+        // GIVEN
+        Long usuarioId = addUsuarioBD();
+
+        // WHEN, THEN
+        // Si el propio usuario intenta editar su nombre a null,
+        // se produce una excepción de tipo UsuarioServiceException
+
+        Assertions.assertThrows(UsuarioServiceException.class, () -> {
+            usuarioService.editarUsuario(datosEdicion(usuarioId, null));
+        });
     }
 }

@@ -7,35 +7,93 @@
     <div th:replace="fragments :: navbar"></div>
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
+
+            <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${!#strings.isEmpty(mensaje)}">
+                <span th:text="${mensaje}"></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${!#strings.isEmpty(error)}">
+                <span th:text="${error}"></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h3 class="card-title h5 mb-0">Detalles del Usuario</h3>
                     <span class="badge bg-light text-primary" th:text="'ID: ' + ${usuario.id}">ID: 1</span>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3 row">
-                        <label class="col-sm-4 col-form-label fw-bold">Nombre:</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext" th:text="${usuario.nombre}">Nombre del usuario</p>
+
+                <!-- Vista editable: solo para el propio usuario -->
+                <form th:if="${esPropioUsuario}" id="form-editar-usuario" method="post"
+                      th:action="@{/registrados/{id}/editar(id=${usuario.id})}">
+                    <div class="card-body">
+                        <div class="form-group row">
+                            <label for="nombre" class="col-sm-4 col-form-label font-weight-bold">Nombre:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control campo-editable" id="nombre" name="nombre"
+                                       th:value="${usuario.nombre}" th:attr="data-original=${usuario.nombre}" required>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="email" class="col-sm-4 col-form-label font-weight-bold">Email:</label>
+                            <div class="col-sm-8">
+                                <input type="email" class="form-control campo-editable" id="email" name="email"
+                                       th:value="${usuario.email}" th:attr="data-original=${usuario.email}" required>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="password" class="col-sm-4 col-form-label font-weight-bold">Nueva contraseña:</label>
+                            <div class="col-sm-8">
+                                <input type="password" class="form-control campo-editable" id="password" name="password"
+                                       data-original="" placeholder="Déjalo vacío para no cambiarla"
+                                       autocomplete="new-password">
+                            </div>
+                        </div>
+                        <div class="form-group row mb-0" th:if="${usuario.fechaNacimiento != null}">
+                            <label class="col-sm-4 col-form-label font-weight-bold">Fecha de Nacimiento:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-plaintext"
+                                   th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}">01/01/2000</p>
+                            </div>
                         </div>
                     </div>
-                    <hr>
-                    <div class="mb-3 row">
-                        <label class="col-sm-4 col-form-label fw-bold">Email:</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext" th:text="${usuario.email}">usuario@email.com</p>
-                        </div>
+                    <div class="card-footer text-right bg-light">
+                        <button type="submit" id="btn-confirmar" class="btn btn-success d-none">Confirmar cambios</button>
                     </div>
-                    <hr th:if="${usuario.fechaNacimiento != null}">
-                    <div class="mb-3 row" th:if="${usuario.fechaNacimiento != null}">
-                        <label class="col-sm-4 col-form-label fw-bold">Fecha de Nacimiento:</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext"
-                               th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}">01/01/2000</p>
+                </form>
+
+                <!-- Vista de solo lectura: un admin viendo el perfil de otro usuario -->
+                <div th:unless="${esPropioUsuario}">
+                    <div class="card-body">
+                        <div class="mb-3 row">
+                            <label class="col-sm-4 col-form-label font-weight-bold">Nombre:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-plaintext" th:text="${usuario.nombre}">Nombre del usuario</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="mb-3 row">
+                            <label class="col-sm-4 col-form-label font-weight-bold">Email:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-plaintext" th:text="${usuario.email}">usuario@email.com</p>
+                            </div>
+                        </div>
+                        <hr th:if="${usuario.fechaNacimiento != null}">
+                        <div class="mb-3 row" th:if="${usuario.fechaNacimiento != null}">
+                            <label class="col-sm-4 col-form-label font-weight-bold">Fecha de Nacimiento:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-plaintext"
+                                   th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}">01/01/2000</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="card-footer text-end bg-light" th:if="${EsAdmin}">
+
+                <div class="card-footer text-right bg-light" th:if="${EsAdmin}">
                     <a th:href="@{/registrados}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Volver a la lista
                     </a>
@@ -46,5 +104,32 @@
 </div>
 
 <div th:replace="fragments :: javascript"></div>
+<script th:if="${esPropioUsuario}">
+    // Muestra el botón "Confirmar cambios" solo cuando algún campo difiere de su valor original
+    (function () {
+        var form = document.getElementById('form-editar-usuario');
+        if (!form) return;
+        var boton = document.getElementById('btn-confirmar');
+        var campos = form.querySelectorAll('.campo-editable');
+
+        function hayCambios() {
+            for (var i = 0; i < campos.length; i++) {
+                if (campos[i].value !== (campos[i].getAttribute('data-original') || '')) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function actualizarBoton() {
+            boton.classList.toggle('d-none', !hayCambios());
+        }
+
+        for (var i = 0; i < campos.length; i++) {
+            campos[i].addEventListener('input', actualizarBoton);
+        }
+        actualizarBoton();
+    })();
+</script>
 </body>
 </html>
