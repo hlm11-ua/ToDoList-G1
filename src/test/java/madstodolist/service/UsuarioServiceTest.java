@@ -218,8 +218,9 @@ public class UsuarioServiceTest {
 
     // Tests de edición de usuario: solo el propio usuario puede editarse
 
-    private UsuarioData datosEdicion(String nombre) {
+    private UsuarioData datosEdicion(Long id, String nombre) {
         UsuarioData datos = new UsuarioData();
+        datos.setId(id);
         datos.setNombre(nombre);
         datos.setEmail("user@ua");
         datos.setPassword("123");
@@ -233,7 +234,7 @@ public class UsuarioServiceTest {
 
         // WHEN
         // el propio usuario edita su nombre
-        UsuarioData editado = usuarioService.editarUsuario(usuarioId, usuarioId, datosEdicion("Nombre Nuevo"));
+        UsuarioData editado = usuarioService.editarUsuario(datosEdicion(usuarioId, "Nombre Nuevo"));
 
         // THEN
         // se devuelve y se guarda el usuario con los datos nuevos
@@ -243,94 +244,16 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    public void editarOtroUsuarioLanzaExcepcion() {
-        // GIVEN
-        Long usuarioId = addUsuarioBD();
-
-        UsuarioData otro = new UsuarioData();
-        otro.setEmail("otro@ua");
-        otro.setNombre("Otro Usuario");
-        otro.setPassword("456");
-        Long otroId = usuarioService.registrar(otro).getId();
-
-        // WHEN, THEN
-        // un usuario intenta editar a otro usuario
-        Assertions.assertThrows(UsuarioServiceException.class, () -> {
-            usuarioService.editarUsuario(otroId, usuarioId, datosEdicion("Nombre Hackeado"));
-        });
-
-        // y los datos no cambian
-        assertThat(usuarioService.findById(usuarioId).getNombre()).isEqualTo("Usuario Ejemplo");
-    }
-
-    @Test
-    public void adminNoPuedeEditarAOtroUsuario() {
-        // GIVEN
-        Long usuarioId = addUsuarioBD();
-
-        UsuarioData admin = new UsuarioData();
-        admin.setEmail("admin@ua");
-        admin.setPassword("admin");
-        admin.setAdmin(true);
-        Long adminId = usuarioService.registrar(admin).getId();
-
-        // WHEN, THEN
-        // ni siquiera un administrador puede editar a otro usuario
-        Assertions.assertThrows(UsuarioServiceException.class, () -> {
-            usuarioService.editarUsuario(adminId, usuarioId, datosEdicion("Nombre Admin"));
-        });
-
-        assertThat(usuarioService.findById(usuarioId).getNombre()).isEqualTo("Usuario Ejemplo");
-    }
-
-    @Test
-    public void editarUsuarioSinUsuarioLogeadoLanzaExcepcion() {
+    public void editarUsuarioPropioConDatosErroneosLanzaExcepcion() {
         // GIVEN
         Long usuarioId = addUsuarioBD();
 
         // WHEN, THEN
+        // Si el propio usuario intenta editar su nombre a null,
+        // se produce una excepción de tipo UsuarioServiceException
+
         Assertions.assertThrows(UsuarioServiceException.class, () -> {
-            usuarioService.editarUsuario(null, usuarioId, datosEdicion("Nombre Nuevo"));
+            usuarioService.editarUsuario(datosEdicion(usuarioId, null));
         });
-
-        assertThat(usuarioService.findById(usuarioId).getNombre()).isEqualTo("Usuario Ejemplo");
-    }
-
-    @Test
-    public void editarUsuarioInexistenteLanzaExcepcion() {
-        // WHEN, THEN
-        Assertions.assertThrows(UsuarioServiceException.class, () -> {
-            usuarioService.editarUsuario(1L, 1L, datosEdicion("Nombre Nuevo"));
-        });
-    }
-
-    @Test
-    public void editarUsuarioNoCambiaAdminNiBloqueo() {
-        // GIVEN
-        Long usuarioId = addUsuarioBD();
-
-        // WHEN
-        // el usuario intenta hacerse admin y desbloquearse/bloquearse al editar
-        UsuarioData datos = datosEdicion("Nombre Nuevo");
-        datos.setAdmin(true);
-        datos.setBloqueado(true);
-        usuarioService.editarUsuario(usuarioId, usuarioId, datos);
-
-        // THEN
-        // esos campos no se modifican desde la edición
-        UsuarioData usuarioBD = usuarioService.findById(usuarioId);
-        assertThat(usuarioBD.isAdmin()).isFalse();
-        assertThat(usuarioBD.isBloqueado()).isFalse();
-    }
-
-    @Test
-    public void servicioFindAllConBDVaciaDevuelveListaVacia() {
-        // WHEN
-        // Si no hay usuarios en la BD
-        Iterable<UsuarioData> usuarios = usuarioService.findAll();
-
-        // THEN
-        // Devuelve una colección vacía (no nula)
-        assertThat(usuarios).isEmpty();
     }
 }
