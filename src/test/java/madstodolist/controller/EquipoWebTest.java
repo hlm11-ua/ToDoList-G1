@@ -3,6 +3,7 @@ package madstodolist.controller;
 import madstodolist.dto.EquipoData;
 import madstodolist.dto.UsuarioData;
 import madstodolist.service.EquipoService;
+import madstodolist.service.TableroService;
 import madstodolist.service.UsuarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,9 @@ public class EquipoWebTest {
     @MockBean
     private EquipoService equipoService;
 
+    @MockBean
+    private TableroService tableroService;
+
     @Test
     public void listaEquiposDevuelveVistaYListaDeEquipos() throws Exception {
         // Mock de usuario
@@ -80,9 +84,11 @@ public class EquipoWebTest {
                 .andExpect(model().attribute("equipos", equiposMock))
                 .andExpect(content().string(containsString("Proyecto Alpha")))
                 .andExpect(content().string(containsString("Proyecto Beta")))
-                .andExpect(content().string(containsString("collapse-equipo-1")))
-                .andExpect(content().string(containsString("Ver Usuarios")))
-                .andExpect(content().string(containsString("data-toggle=\"collapse\"")));
+                //.andExpect(content().string(containsString("collapse-equipo-1")))
+                .andExpect(content().string(containsString("Ver Equipo")))
+                .andExpect(content().string(containsString("/equipos/1")))
+                .andExpect(content().string(containsString("/equipos/2")));
+                //.andExpect(content().string(containsString("data-toggle=\"collapse\"")));
     }
 
     @Test
@@ -212,9 +218,11 @@ public class EquipoWebTest {
         EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha",
                 usuario(1L, "Usuario Test", "user@ua"),
                 usuario(2L, "Otro Usuario", "otro@ua"));
-        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+        when(equipoService.recuperarEquipo(1L)).thenReturn(equipo);
+        when(equipoService.usuariosEquipo(1L)).thenReturn(equipo.getUsuarios());
+        when(tableroService.tablerosEquipo(1L)).thenReturn(new ArrayList<>());
 
-        this.mockMvc.perform(get("/equipos").session(sesionUsuario(1L)))
+        this.mockMvc.perform(get("/equipos/1").session(sesionUsuario(1L)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Usuario Test")))
                 .andExpect(content().string(containsString("user@ua")))
@@ -226,10 +234,11 @@ public class EquipoWebTest {
     @Test
     public void listaEquiposSinMiembrosMuestraMensaje() throws Exception {
         EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
-        when(equipoService.findAllOrdenadoPorNombre()).thenReturn(Collections.singletonList(equipo));
+        when(equipoService.recuperarEquipo(1L)).thenReturn(equipo);
         when(equipoService.usuariosEquipo(1L)).thenReturn(Collections.emptyList());
+        when(tableroService.tablerosEquipo(1L)).thenReturn(new ArrayList<>());
 
-        this.mockMvc.perform(get("/equipos").session(sesionUsuario(1L)))
+        this.mockMvc.perform(get("/equipos/1").session(sesionUsuario(1L)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Sin usuarios registrados en este equipo.")));
     }
@@ -355,6 +364,78 @@ public class EquipoWebTest {
                 .andExpect(status().isForbidden());
 
         verify(equipoService, never()).eliminarEquipo(anyLong());
+    }
+
+
+    @Test
+    public void verEquipoMuestraUsuariosYTableros() throws Exception {
+        // GIVEN
+        // Un equipo de prueba con dos usuarios
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha",
+                usuario(1L, "Usuario Test", "user@ua"),
+                usuario(2L, "Otro Usuario", "otro@ua"));
+
+        // WHEN
+        // recuperarEquipo debe devolver el equipo,
+        // y usuariosEquipo devuelve los usuarios que tiene el equipo
+        when(equipoService.recuperarEquipo(1L)).thenReturn(equipo);
+        when(equipoService.usuariosEquipo(1L)).thenReturn(equipo.getUsuarios());
+        when(tableroService.tablerosEquipo(1L)).thenReturn(new ArrayList<>());
+
+        // THEN
+        // En /equipos/{equipo.id} debe salir la lista de usuarios,
+        // y también la lista de tableros junto con el botón Crear Tablero
+        this.mockMvc.perform(get("/equipos/1").session(sesionUsuario(1L)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(view().name("verEquipo"))
+                .andExpect(model().attributeExists("equipo"))
+                .andExpect(model().attributeExists("usuarios"))
+                .andExpect(content().string(containsString("Proyecto Alpha")))
+                .andExpect(content().string(containsString("Usuario Test")))
+                .andExpect(content().string(containsString("user@ua")))
+                .andExpect(content().string(containsString("Otro Usuario")))
+                .andExpect(content().string(containsString("otro@ua")))
+                .andExpect(content().string(containsString("Crear Tablero")))
+                .andExpect(content().string(containsString("ID")))
+                .andExpect(content().string(containsString("TABLERO")));
+    }
+
+    @Test
+    public void verEquipoSinUsuariosMuestraMensaje() throws Exception {
+        // GIVEN
+        EquipoData equipo = equipoConUsuarios(1L, "Proyecto Alpha");
+
+        // WHEN
+        // recuperarEquipo debe devolver el equipo,
+        // y usuariosEquipo devuelve los usuarios que tiene el equipo
+        when(equipoService.recuperarEquipo(1L)).thenReturn(equipo);
+        when(equipoService.usuariosEquipo(1L)).thenReturn(Collections.emptyList());
+        when(tableroService.tablerosEquipo(1L)).thenReturn(new ArrayList<>());
+
+        // En /equipos/{equipo.id} debe salir la lista de usuarios vacia,
+        // y también la lista de tableros junto con el botón Crear Tablero
+        this.mockMvc.perform(get("/equipos/1").session(sesionUsuario(1L)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(view().name("verEquipo"))
+                .andExpect(content().string(containsString("Proyecto Alpha")))
+                .andExpect(content().string(containsString("Sin usuarios registrados en este equipo.")))
+                .andExpect(content().string(containsString("Crear Tablero")))
+                .andExpect(content().string(containsString("ID")))
+                .andExpect(content().string(containsString("TABLERO")));
+    }
+
+    @Test
+    public void verEquipoSinUsuarioLogeadoDevuelve403() throws Exception {
+        // WHEN
+        // Si como anónimo se intenta acceder a la página del equipo
+        this.mockMvc.perform(get("/equipos/1"))
+                .andExpect(status().isForbidden());
+
+        // THEN
+        verify(equipoService, never()).recuperarEquipo(anyLong());
+        verify(equipoService, never()).usuariosEquipo(anyLong());
     }
 
     private MockHttpSession sesionUsuario(Long id) {

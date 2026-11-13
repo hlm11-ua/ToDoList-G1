@@ -25,6 +25,10 @@ public class Tarea implements Serializable {
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tablero_id")
+    private Tablero tablero;
+
     // Constructor vacío necesario para JPA/Hibernate.
     // No debe usarse desde la aplicación.
     public Tarea() {}
@@ -67,6 +71,24 @@ public class Tarea implements Serializable {
             this.usuario = usuario;
             // Añade la tarea a la lista de tareas del usuario
             usuario.addTarea(this);
+        }
+    }
+
+    public Tablero getTablero() {
+        return tablero;
+    }
+
+    public void setTablero(Tablero tablero) {
+        if (this.tablero != tablero) {
+            if (this.tablero != null) {
+                this.tablero.getTareas().remove(this);
+            }
+
+            this.tablero = tablero;
+
+            if (tablero != null && !tablero.getTareas().contains(this)) {
+                tablero.getTareas().add(this);
+            }
         }
     }
 

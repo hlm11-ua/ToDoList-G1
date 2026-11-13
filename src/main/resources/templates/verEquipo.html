@@ -7,7 +7,9 @@
     <h2 class="mb-4" th:text="${equipo.nombre}">Nombre equipo</h2>
 
     <!-- Sección para crear un nuevo tablero -->
-    <div class="mb-3">
+    <form th:action="@{/equipos/{id}/tableros/crear(id=${equipo.id})}"
+          method="post"
+          class="mb-3">
         <div class="row g-2 align-items-center">
             <div class="col-md-5 col-sm-8">
                 <label for="nombreTablero" class="visually-hidden">
@@ -17,26 +19,35 @@
                        id="nombreTablero"
                        name="nombre"
                        class="form-control form-control-sm"
-                       placeholder="Nombre del nuevo tablero">
+                       placeholder="Nombre del nuevo tablero" required>
             </div>
             <div class="col-md-auto col-sm-4">
-                <button type="button"
-                        class="btn btn-success btn-sm">
+                <button type="submit" class="btn btn-success btn-sm">
                     <i class="bi bi-plus-circle"></i>
                     Crear Tablero
                 </button>
             </div>
         </div>
-    </div>
+    </form>
 
     <table class="table table-striped align-middle">
         <thead class="table-dark">
         <tr>
-            <th scope="col">Nombre del Tablero</th>
+            <th scope="col">ID</th>
+            <th scope="col">TABLERO</th>
         </tr>
         </thead>
         <tbody>
-
+            <tr th:each="tablero : ${tableros}">
+                <td th:text="${tablero.id}">1</td>
+                <td th:text="${tablero.nombre}">Nombre tablero</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(usuarios)}">
+                <td colspan="3"
+                    class="text-muted text-center py-3">
+                    Sin usuarios registrados en este equipo.
+                </td>
+            </tr>
         </tbody>
     </table>
 
