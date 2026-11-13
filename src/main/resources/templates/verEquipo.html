@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments :: head (titulo='Equipo')}"></head>
+<body>
+<div class="container mt-5">
+    <div th:replace="~{fragments :: navbar}"></div>
+    <h2 class="mb-4" th:text="${equipo.nombre}">Nombre equipo</h2>
+
+    <!-- Sección para crear un nuevo tablero -->
+    <div class="mb-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5 col-sm-8">
+                <label for="nombreTablero" class="visually-hidden">
+                    Nombre del tablero
+                </label>
+                <input type="text"
+                       id="nombreTablero"
+                       name="nombre"
+                       class="form-control form-control-sm"
+                       placeholder="Nombre del nuevo tablero">
+            </div>
+            <div class="col-md-auto col-sm-4">
+                <button type="button"
+                        class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle"></i>
+                    Crear Tablero
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped align-middle">
+        <thead class="table-dark">
+        <tr>
+            <th scope="col">Nombre del Tablero</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+
+    <hr class="my-4">
+    <div class="mb-4">
+        <h4 class="mb-3">Usuarios del equipo</h4>
+        <table class="table table-striped align-middle">
+            <thead class="table-secondary">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Nombre</th>
+                <th scope="col">Email</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr th:each="usuario : ${usuarios}">
+                    <td th:text="${usuario.id}">1</td>
+                    <td th:text="${usuario.nombre}">Nombre Ejemplo</td>
+                    <td th:text="${usuario.email}">ejemplo@email.com</td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(usuarios)}">
+                    <td colspan="3"
+                        class="text-muted text-center py-3">
+                        Sin usuarios registrados en este equipo.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div th:replace="~{fragments :: javascript}"></div>
+</body>
+</html>
