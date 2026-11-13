@@ -143,4 +143,17 @@ public class EquiposController {
 
         return "redirect:/equipos/" + idEquipo;
     }
+
+    @GetMapping("/tableros/{id}")
+    public String verTablero(@PathVariable("id") Long idTablero, Model model, HttpSession session) {
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        TableroData tablero = tableroService.recuperarTablero(idTablero);
+        model.addAttribute("tablero", tablero);
+        return "tablero";
+    }
 }

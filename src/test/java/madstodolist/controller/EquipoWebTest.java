@@ -1,6 +1,7 @@
 package madstodolist.controller;
 
 import madstodolist.dto.EquipoData;
+import madstodolist.dto.TableroData;
 import madstodolist.dto.UsuarioData;
 import madstodolist.service.EquipoService;
 import madstodolist.service.TableroService;
@@ -436,6 +437,33 @@ public class EquipoWebTest {
         // THEN
         verify(equipoService, never()).recuperarEquipo(anyLong());
         verify(equipoService, never()).usuariosEquipo(anyLong());
+    }
+
+    @Test
+    public void verTableroMuestraNombreYDevuelveVista() throws Exception {
+        // GIVEN
+        TableroData tablero = new TableroData(1L, "Sprint 1");
+        when(tableroService.recuperarTablero(1L)).thenReturn(tablero);
+
+        // WHEN, THEN
+        this.mockMvc.perform(get("/tableros/1").session(sesionUsuario(1L)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(view().name("tablero"))
+                .andExpect(model().attributeExists("tablero"))
+                .andExpect(content().string(containsString("Sprint 1")));
+
+        verify(tableroService).recuperarTablero(1L);
+    }
+
+    @Test
+    public void verTableroSinUsuarioLogeadoDevuelve403() throws Exception {
+        // WHEN
+        this.mockMvc.perform(get("/tableros/1"))
+                .andExpect(status().isForbidden());
+
+        // THEN
+        verify(tableroService, never()).recuperarTablero(anyLong());
     }
 
     private MockHttpSession sesionUsuario(Long id) {

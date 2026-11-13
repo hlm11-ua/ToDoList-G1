@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments :: head (titulo='Tablero')}"></head>
+<body>
+<div class="container mt-5">
+    <div th:replace="~{fragments :: navbar}"></div>
+    <h2 class="mb-4" th:text="${tablero.nombre}">Nombre tablero</h2>
+</div>
+
+<div th:replace="~{fragments :: javascript}"></div>
+</body>
+</html>

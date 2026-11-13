@@ -40,12 +40,16 @@
         <tbody>
             <tr th:each="tablero : ${tableros}">
                 <td th:text="${tablero.id}">1</td>
-                <td th:text="${tablero.nombre}">Nombre tablero</td>
+                <td>
+                    <a th:href="@{/tableros/{id}(id=${tablero.id})}"
+                       th:text="${tablero.nombre}">
+                        Nombre tablero
+                    </a>
+                </td>
             </tr>
-            <tr th:if="${#lists.isEmpty(usuarios)}">
-                <td colspan="3"
-                    class="text-muted text-center py-3">
-                    Sin usuarios registrados en este equipo.
+            <tr th:if="${#lists.isEmpty(tableros)}">
+                <td colspan="2" class="text-muted text-center py-3">
+                    No hay tableros creados en este equipo.
                 </td>
             </tr>
         </tbody>

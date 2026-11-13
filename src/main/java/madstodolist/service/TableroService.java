@@ -64,4 +64,12 @@ public class TableroService {
 
         return resultado;
     }
+
+    @Transactional(readOnly = true)
+    public TableroData recuperarTablero(Long id) {
+        Tablero tablero = tableroRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tablero no encontrado"));
+
+        return new TableroData(tablero.getId(), tablero.getNombre());
+    }
 }
