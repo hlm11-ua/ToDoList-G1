@@ -5,6 +5,45 @@
 <div class="container mt-5">
     <div th:replace="~{fragments :: navbar}"></div>
     <h2 class="mb-4" th:text="${tablero.nombre}">Nombre tablero</h2>
+
+    <!-- Columnas del tablero -->
+    <div class="row g-3">
+        <!-- Pendiente -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">Pendiente</h6>
+                </div>
+                <div class="card-body">
+                    <!-- tareas pendientes -->
+                </div>
+            </div>
+        </div>
+
+        <!-- En progreso -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">En progreso</h6>
+                </div>
+                <div class="card-body">
+                    <!-- tareas en progreso -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Completada -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">Completada</h6>
+                </div>
+                <div class="card-body">
+                    <!-- tareas completadas -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div th:replace="~{fragments :: javascript}"></div>
