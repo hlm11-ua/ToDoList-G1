@@ -26,8 +26,13 @@
                 <td th:text="${usuario.nombre}">Nombre Ejemplo</td>
                 <td th:text="${usuario.email}">ejemplo@email.com</td>
                 <td>
-                    <span th:if="${usuario.bloqueado}" class="text-danger">Bloqueado</span>
-                    <span th:unless="${usuario.bloqueado}" class="text-success">Habilitado</span>
+                    <th:block th:if="${usuario.isAdmin()}">
+                        <span class="text-primary">Administrador</span>
+                    </th:block>
+                    <th:block th:unless="${usuario.isAdmin()}">
+                        <span th:if="${usuario.bloqueado}" class="text-danger">Bloqueado</span>
+                        <span th:unless="${usuario.bloqueado}" class="text-success">Habilitado</span>
+                    </th:block>
                 </td>
                 <td class="text-center">
                     <!-- Botón para desplegar/contraer equipos del usuario -->
