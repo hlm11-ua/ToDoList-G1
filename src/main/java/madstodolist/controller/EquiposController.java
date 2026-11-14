@@ -2,9 +2,11 @@ package madstodolist.controller;
 
 import madstodolist.dto.EquipoData;
 import madstodolist.dto.TableroData;
+import madstodolist.dto.TareaData;
 import madstodolist.dto.UsuarioData;
 import madstodolist.service.EquipoService;
 import madstodolist.service.TableroService;
+import madstodolist.service.TareaService;
 import madstodolist.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,9 @@ public class EquiposController {
 
     @Autowired
     private TableroService tableroService;
+
+    @Autowired
+    private TareaService tareaService;
 
     @GetMapping("/equipos")
     public String listaEquipos(Model model, HttpSession session) {
@@ -153,7 +158,11 @@ public class EquiposController {
         }
 
         TableroData tablero = tableroService.recuperarTablero(idTablero);
+        List<TareaData> tareas = tareaService.tareasTablero(idTablero);
+
         model.addAttribute("tablero", tablero);
+        model.addAttribute("tareas", tareas);
+
         return "tablero";
     }
 }

@@ -9,43 +9,307 @@
     <!-- Columnas del tablero -->
     <div class="row g-3">
         <!-- Pendiente -->
-        <div class="col-md-4">
+        <div class="col-md-4 tablero-columna" id="columna-pendiente">
             <div class="card h-100">
                 <div class="card-header bg-secondary text-white">
                     <h6 class="mb-0">Pendiente</h6>
                 </div>
                 <div class="card-body">
-                    <!-- tareas pendientes -->
+                    <div th:each="tarea : ${tareas}"
+                         th:if="${tarea.estado.toString() == 'PENDIENTE'}"
+                         class="tarea-card card mb-2">
+                        <div class="card-body py-2"
+                             th:text="${tarea.titulo}">
+                            Título de la tarea
+                        </div>
+                    </div>
+
+                    <div class="zona-anadir">
+                        <div class="boton-anadir"
+                             role="button"
+                             tabindex="0">
+                            + Añadir una tarea
+                        </div>
+
+                        <form class="formulario-tarea"
+                              th:action="@{/tableros/{id}/tareas/nueva(id=${tablero.id})}"
+                              method="post"
+                              style="display: none;">
+
+                            <input type="hidden"
+                                   name="estado"
+                                   value="PENDIENTE"/>
+
+                            <textarea name="titulo"
+                                      class="form-control mb-2"
+                                      rows="2"
+                                      placeholder="Introduzca un título"
+                                      required = "required"></textarea>
+
+                            <button type="submit"
+                                    class="btn btn-primary btn-sm">
+                                Añadir tarea
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-light btn-sm cancelar-anadir">
+                                Cancelar
+                            </button>
+
+                            <div class="error-tarea text-danger mt-2"></div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- En progreso -->
-        <div class="col-md-4">
+        <div class="col-md-4 tablero-columna" id="columna-en-progreso">
             <div class="card h-100">
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0">En progreso</h6>
                 </div>
                 <div class="card-body">
-                    <!-- tareas en progreso -->
+                    <div th:each="tarea : ${tareas}"
+                         th:if="${tarea.estado.toString() == 'EN_PROGRESO'}"
+                         class="tarea-card card mb-2">
+                        <div class="card-body py-2"
+                             th:text="${tarea.titulo}">
+                            Título de la tarea
+                        </div>
+                    </div>
+
+                    <div class="zona-anadir">
+                        <div class="boton-anadir"
+                             role="button"
+                             tabindex="0">
+                            + Añadir una tarea
+                        </div>
+
+                        <form class="formulario-tarea"
+                              th:action="@{/tableros/{id}/tareas/nueva(id=${tablero.id})}"
+                              method="post"
+                              style="display: none;">
+
+                            <input type="hidden"
+                                   name="estado"
+                                   value="EN_PROGRESO"/>
+
+                            <textarea name="titulo"
+                                      class="form-control mb-2"
+                                      rows="2"
+                                      placeholder="Introduzca un título"
+                                      required = "required"></textarea>
+
+                            <button type="submit"
+                                    class="btn btn-primary btn-sm">
+                                Añadir tarea
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-light btn-sm cancelar-anadir">
+                                Cancelar
+                            </button>
+
+                            <div class="error-tarea text-danger mt-2"></div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Completada -->
-        <div class="col-md-4">
+        <div class="col-md-4 tablero-columna" id="columna-completada">
             <div class="card h-100">
                 <div class="card-header bg-success text-white">
                     <h6 class="mb-0">Completada</h6>
                 </div>
                 <div class="card-body">
-                    <!-- tareas completadas -->
+                    <div th:each="tarea : ${tareas}"
+                         th:if="${tarea.estado.toString() == 'COMPLETADA'}"
+                         class="tarea-card card mb-2">
+                        <div class="card-body py-2"
+                             th:text="${tarea.titulo}">
+                            Título de la tarea
+                        </div>
+                    </div>
+
+                    <div class="zona-anadir">
+                        <div class="boton-anadir"
+                             role="button"
+                             tabindex="0">
+                            + Añadir una tarea
+                        </div>
+
+                        <form class="formulario-tarea"
+                              th:action="@{/tableros/{id}/tareas/nueva(id=${tablero.id})}"
+                              method="post"
+                              style="display: none;">
+
+                            <input type="hidden"
+                                   name="estado"
+                                   value="COMPLETADA"/>
+
+                            <textarea name="titulo"
+                                      class="form-control mb-2"
+                                      rows="2"
+                                      placeholder="Introduzca un título"
+                                      required = "required"></textarea>
+
+                            <button type="submit"
+                                    class="btn btn-primary btn-sm">
+                                Añadir tarea
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-light btn-sm cancelar-anadir">
+                                Cancelar
+                            </button>
+
+                            <div class="error-tarea text-danger mt-2"></div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<style>
+    .tablero-columna > .card > .card-body {
+        min-height: 180px;
+    }
+    .zona-anadir {
+        margin-top: 12px;
+    }
+    .boton-anadir {
+        background-color: #dce8f5;
+        color: #315b83;
+        padding: 10px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .boton-anadir:hover {
+        background-color: #c5dbf1;
+    }
+    .boton-anadir:focus {
+        outline: 2px solid #6c9dcc;
+        outline-offset: 2px;
+    }
+    .formulario-tarea {
+        background-color: #f1f2f4;
+        padding: 10px;
+        border-radius: 6px;
+    }
+    .formulario-tarea textarea {
+        resize: vertical;
+    }
+    .tarea-card {
+        border: 1px solid #dee2e6;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+</style>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Mostramos el formulario que aparece tras dar clic al añadir tarea en el tablero
+        document.querySelectorAll(".boton-anadir").forEach(function (boton) {
+            boton.addEventListener("click", function () {
+                const zona = boton.closest(".zona-anadir");
+                const formulario = zona.querySelector(".formulario-tarea");
+
+                boton.style.display = "none";
+                formulario.style.display = "block";
+                formulario.querySelector("textarea").focus();
+            });
+
+            boton.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    boton.click();
+                }
+            });
+        });
+
+        // Cancelamos la creación de una tarea
+        document.querySelectorAll(".cancelar-anadir").forEach(function (boton) {
+            boton.addEventListener("click", function () {
+                const formulario = boton.closest(".formulario-tarea");
+                const zona = formulario.closest(".zona-anadir");
+                const botonAnadir = zona.querySelector(".boton-anadir");
+
+                formulario.reset();
+                formulario.querySelector(".error-tarea").textContent = "";
+                formulario.style.display = "none";
+                botonAnadir.style.display = "block";
+            });
+        });
+
+        // Enviamos el formulario sin recargar ni abandonar el tablero
+        document.querySelectorAll(".formulario-tarea").forEach(function (formulario) {
+            formulario.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const campoTitulo = formulario.querySelector("textarea");
+                const titulo = campoTitulo.value.trim();
+                const error = formulario.querySelector(".error-tarea");
+
+                if (!titulo) {
+                    error.textContent = "Introduce un título para la tarea.";
+                    return;
+                }
+
+                const botonEnviar = formulario.querySelector(
+                    'button[type="submit"]'
+                );
+
+                botonEnviar.disabled = true;
+                error.textContent = "";
+
+                try {
+                    const respuesta = await fetch(formulario.action, {
+                        method: "POST",
+                        body: new FormData(formulario),
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        redirect: "follow"
+                    });
+
+                    if (!respuesta.ok) {
+                        throw new Error("No se pudo guardar la tarea.");
+                    }
+
+                    const tarjeta = document.createElement("div");
+                    tarjeta.className = "tarea-card card mb-2";
+
+                    const contenido = document.createElement("div");
+                    contenido.className = "card-body py-2";
+                    contenido.textContent = titulo;
+
+                    tarjeta.appendChild(contenido);
+
+                    const columna = formulario.closest(".tablero-columna");
+                    const zonaAnadir = formulario.closest(".zona-anadir");
+
+                    columna.querySelector(".card-body").insertBefore(
+                        tarjeta,
+                        zonaAnadir
+                    );
+
+                    formulario.reset();
+                    formulario.style.display = "none";
+                    zonaAnadir.querySelector(".boton-anadir").style.display = "block";
+
+                } catch (e) {
+                    error.textContent = "Error al guardar la tarea. Inténtalo de nuevo.";
+                } finally {
+                    botonEnviar.disabled = false;
+                }
+            });
+        });
+    });
+</script>
 <div th:replace="~{fragments :: javascript}"></div>
 </body>
 </html>
