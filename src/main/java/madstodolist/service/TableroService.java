@@ -9,6 +9,7 @@ import madstodolist.repository.TableroRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import madstodolist.dto.UsuarioData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,9 @@ public class TableroService {
 
     @Autowired
     private EquipoRepository equipoRepository;
+
+    @Autowired
+    private EquipoService equipoService;
 
     @Transactional
     public TableroData crearTablero(Long equipoId, String nombre) {
@@ -71,5 +75,12 @@ public class TableroService {
                 .orElseThrow(() -> new IllegalArgumentException("Tablero no encontrado"));
 
         return new TableroData(tablero.getId(), tablero.getNombre());
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioData> usuariosTablero(Long tableroId) {
+        Tablero tablero = tableroRepository.findById(tableroId).orElseThrow(() -> new IllegalArgumentException("Tablero no encontrado"));
+        Long equipoId = tablero.getEquipo().getId();
+        return equipoService.usuariosEquipo(equipoId);
     }
 }

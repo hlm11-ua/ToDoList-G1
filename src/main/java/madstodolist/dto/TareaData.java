@@ -15,6 +15,7 @@ public class TareaData implements Serializable {
 
     private Long tableroId;
     private Long usuarioAsignadoId;
+    private String usuarioAsignadoNombre;
     private EstadoTarea estado;
 
     // Getters y setters
@@ -57,6 +58,14 @@ public class TareaData implements Serializable {
 
     public void setUsuarioAsignadoId(Long usuarioAsignadoId) {
         this.usuarioAsignadoId = usuarioAsignadoId;
+    }
+
+    public String getUsuarioAsignadoNombre() {
+        return usuarioAsignadoNombre;
+    }
+
+    public void setUsuarioAsignadoNombre(String usuarioAsignadoNombre) {
+        this.usuarioAsignadoNombre = usuarioAsignadoNombre;
     }
 
     public EstadoTarea getEstado() {

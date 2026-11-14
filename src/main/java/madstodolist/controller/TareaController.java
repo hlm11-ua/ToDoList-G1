@@ -132,5 +132,37 @@ public class TareaController {
 
         return "redirect:/tableros/" + idTablero;
     }
+
+    @PostMapping("/tableros/tareas/{id}/asignar")
+    public String asignarUsuarioATarea(@PathVariable("id") Long idTarea, @RequestParam("usuarioId") Long usuarioId) {
+        Long idUsuarioLogeado = managerUserSession.usuarioLogeado();
+        if (idUsuarioLogeado == null) {
+            throw new UsuarioNoLogeadoException();
+        }
+
+        TareaData tarea = tareaService.findById(idTarea);
+        if (tarea == null || tarea.getTableroId() == null) {
+            throw new TareaNotFoundException();
+        }
+
+        tareaService.asignarUsuarioATarea(idTarea, usuarioId);
+        return "redirect:/tableros/" + tarea.getTableroId();
+    }
+
+    @PostMapping("/tableros/tareas/{id}/desasignar")
+    public String desasignarUsuarioDeTarea(@PathVariable("id") Long idTarea) {
+        Long idUsuarioLogeado = managerUserSession.usuarioLogeado();
+        if (idUsuarioLogeado == null) {
+            throw new UsuarioNoLogeadoException();
+        }
+
+        TareaData tarea = tareaService.findById(idTarea);
+        if (tarea == null || tarea.getTableroId() == null) {
+            throw new TareaNotFoundException();
+        }
+
+        tareaService.desasignarUsuarioDeTarea(idTarea);
+        return "redirect:/tableros/" + tarea.getTableroId();
+    }
 }
 

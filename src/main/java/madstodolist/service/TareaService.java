@@ -1,11 +1,8 @@
 package madstodolist.service;
 
-import madstodolist.model.EstadoTarea;
-import madstodolist.model.Tablero;
-import madstodolist.model.Tarea;
+import madstodolist.model.*;
 import madstodolist.repository.TableroRepository;
 import madstodolist.repository.TareaRepository;
-import madstodolist.model.Usuario;
 import madstodolist.repository.UsuarioRepository;
 import madstodolist.dto.TareaData;
 import org.slf4j.Logger;
@@ -153,10 +150,39 @@ public class TareaService {
 
             if (tarea.getUsuarioAsignado() != null) {
                 tareaData.setUsuarioAsignadoId(tarea.getUsuarioAsignado().getId());
+                tareaData.setUsuarioAsignadoNombre(tarea.getUsuarioAsignado().getNombre());
             }
 
             resultado.add(tareaData);
         }
         return resultado;
+    }
+
+    @Transactional
+    public void asignarUsuarioATarea(Long tareaId, Long usuarioId) {
+        Tarea tarea = tareaRepository.findById(tareaId).orElseThrow(() -> new TareaServiceException("La tarea no existe"));
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow(() -> new TareaServiceException("El usuario no existe"));
+
+        if (tarea.getTablero() == null || tarea.getTablero().getEquipo() == null) {
+            throw new TareaServiceException("La tarea no pertenece a un tablero de un equipo");
+        }
+
+        Equipo equipo = tarea.getTablero().getEquipo();
+
+        if (!equipo.getUsuarios().contains(usuario)) {
+            throw new TareaServiceException(
+                    "El usuario no pertenece al equipo del tablero");
+        }
+
+        tarea.setUsuarioAsignado(usuario);
+        tareaRepository.save(tarea);
+    }
+
+    @Transactional
+    public void desasignarUsuarioDeTarea(Long tareaId) {
+        Tarea tarea = tareaRepository.findById(tareaId).orElseThrow(() -> new TareaServiceException("La tarea no existe"));
+
+        tarea.setUsuarioAsignado(null);
+        tareaRepository.save(tarea);
     }
 }

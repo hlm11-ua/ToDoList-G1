@@ -159,9 +159,10 @@ public class EquiposController {
 
         TableroData tablero = tableroService.recuperarTablero(idTablero);
         List<TareaData> tareas = tareaService.tareasTablero(idTablero);
-
+        List<UsuarioData> usuariosEquipo = tableroService.usuariosTablero(idTablero);
         model.addAttribute("tablero", tablero);
         model.addAttribute("tareas", tareas);
+        model.addAttribute("usuariosEquipo", usuariosEquipo);
 
         return "tablero";
     }

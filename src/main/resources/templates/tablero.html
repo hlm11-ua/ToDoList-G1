@@ -22,6 +22,56 @@
                              th:text="${tarea.titulo}">
                             Título de la tarea
                         </div>
+
+                        <div class="panel-asignacion"
+                             style="display: none;">
+                            <!-- Si no hay usuario asignado, mostramos el formulario -->
+                            <div th:if="${tarea.usuarioAsignadoId == null}">
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/asignar(id=${tarea.id})}">
+
+                                    <label class="form-label">
+                                        Asignar usuario:
+                                    </label>
+
+                                    <select name="usuarioId"
+                                            class="form-select form-select-sm mb-2"
+                                            required="required">
+
+                                        <option value="">Selecciona un usuario</option>
+
+                                        <option th:each="usuario : ${usuariosEquipo}"
+                                                th:value="${usuario.id}"
+                                                th:text="${usuario.nombre}">
+                                        </option>
+                                    </select>
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm">
+                                        Asignar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Si ya hay usuario asignado, mostramos su nombre -->
+                            <div th:if="${tarea.usuarioAsignadoId != null}">
+                                <p class="mb-2">
+                                    Usuario asignado:
+                                    <strong th:text="${tarea.usuarioAsignadoNombre}">
+                                        Nombre del usuario
+                                    </strong>
+                                </p>
+
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/desasignar(id=${tarea.id})}">
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Desasignar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="zona-anadir">
@@ -77,6 +127,55 @@
                              th:text="${tarea.titulo}">
                             Título de la tarea
                         </div>
+                        <div class="panel-asignacion"
+                             style="display: none;">
+                            <!-- Si no hay usuario asignado, mostramos el formulario -->
+                            <div th:if="${tarea.usuarioAsignadoId == null}">
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/asignar(id=${tarea.id})}">
+
+                                    <label class="form-label">
+                                        Asignar usuario:
+                                    </label>
+
+                                    <select name="usuarioId"
+                                            class="form-select form-select-sm mb-2"
+                                            required="required">
+
+                                        <option value="">Selecciona un usuario</option>
+
+                                        <option th:each="usuario : ${usuariosEquipo}"
+                                                th:value="${usuario.id}"
+                                                th:text="${usuario.nombre}">
+                                        </option>
+                                    </select>
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm">
+                                        Asignar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Si ya hay usuario asignado, mostramos su nombre -->
+                            <div th:if="${tarea.usuarioAsignadoId != null}">
+                                <p class="mb-2">
+                                    Usuario asignado:
+                                    <strong th:text="${tarea.usuarioAsignadoNombre}">
+                                        Nombre del usuario
+                                    </strong>
+                                </p>
+
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/desasignar(id=${tarea.id})}">
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Desasignar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="zona-anadir">
@@ -131,6 +230,55 @@
                         <div class="card-body py-2"
                              th:text="${tarea.titulo}">
                             Título de la tarea
+                        </div>
+                        <div class="panel-asignacion"
+                             style="display: none;">
+                            <!-- Si no hay usuario asignado, mostramos el formulario -->
+                            <div th:if="${tarea.usuarioAsignadoId == null}">
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/asignar(id=${tarea.id})}">
+
+                                    <label class="form-label">
+                                        Asignar usuario:
+                                    </label>
+
+                                    <select name="usuarioId"
+                                            class="form-select form-select-sm mb-2"
+                                            required="required">
+
+                                        <option value="">Selecciona un usuario</option>
+
+                                        <option th:each="usuario : ${usuariosEquipo}"
+                                                th:value="${usuario.id}"
+                                                th:text="${usuario.nombre}">
+                                        </option>
+                                    </select>
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm">
+                                        Asignar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Si ya hay usuario asignado, mostramos su nombre -->
+                            <div th:if="${tarea.usuarioAsignadoId != null}">
+                                <p class="mb-2">
+                                    Usuario asignado:
+                                    <strong th:text="${tarea.usuarioAsignadoNombre}">
+                                        Nombre del usuario
+                                    </strong>
+                                </p>
+
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/desasignar(id=${tarea.id})}">
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Desasignar
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
 
@@ -205,8 +353,33 @@
         resize: vertical;
     }
     .tarea-card {
-        border: 1px solid #dee2e6;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .tarea-card:hover {
+        background-color: #e8f1fb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .tarea-card:hover > .card-body {
+        background-color: #e8f1fb;
+    }
+
+    .panel-asignacion {
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
+
+    .panel-asignacion > div {
+        all: unset;
+        display: block;
+    }
+
+    .panel-asignacion form {
+        all: unset;
+        display: block;
     }
 </style>
 
@@ -245,6 +418,16 @@
             });
         });
 
+        // Mostramos u ocultamos el panel de asignación al pulsar una tarea
+        document.querySelectorAll(".tarea-card").forEach(function(tarjeta) {
+            tarjeta.querySelector(".card-body").addEventListener("click", function() {
+                const panel = tarjeta.querySelector(".panel-asignacion");
+
+                panel.style.display =
+                    panel.style.display === "none" ? "block" : "none";
+            });
+        });
+
         // Enviamos el formulario sin recargar ni abandonar el tablero
         document.querySelectorAll(".formulario-tarea").forEach(function (formulario) {
             formulario.addEventListener("submit", async function (event) {
@@ -280,27 +463,8 @@
                         throw new Error("No se pudo guardar la tarea.");
                     }
 
-                    const tarjeta = document.createElement("div");
-                    tarjeta.className = "tarea-card card mb-2";
-
-                    const contenido = document.createElement("div");
-                    contenido.className = "card-body py-2";
-                    contenido.textContent = titulo;
-
-                    tarjeta.appendChild(contenido);
-
-                    const columna = formulario.closest(".tablero-columna");
-                    const zonaAnadir = formulario.closest(".zona-anadir");
-
-                    columna.querySelector(".card-body").insertBefore(
-                        tarjeta,
-                        zonaAnadir
-                    );
-
-                    formulario.reset();
-                    formulario.style.display = "none";
-                    zonaAnadir.querySelector(".boton-anadir").style.display = "block";
-
+                    // Recargamos el tablero para obtener el ID de la tarea creada
+                    window.location.reload();
                 } catch (e) {
                     error.textContent = "Error al guardar la tarea. Inténtalo de nuevo.";
                 } finally {
