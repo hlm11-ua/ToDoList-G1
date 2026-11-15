@@ -4,6 +4,8 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.*;
+import javax.persistence.OneToMany;
+import javax.persistence.CascadeType;
 
 @Entity
 @Table(name = "equipos" )
@@ -22,6 +24,10 @@ public class Equipo implements Serializable {
             inverseJoinColumns = {@JoinColumn(name = "fk_usuario")})
     Set<Usuario> usuarios = new HashSet<>();
 
+    @OneToMany(mappedBy = "equipo",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<Tablero> tableros = new ArrayList<>();
 
     public Equipo(String nombre) {this.nombre = nombre;}
 
@@ -84,6 +90,22 @@ public class Equipo implements Serializable {
     public void removeUsuario(Usuario usuario) {
         this.getUsuarios().remove(usuario);
         usuario.getEquipos().remove(this);
+    }
+
+
+
+    public List<Tablero> getTableros() {
+        return tableros;
+    }
+
+    public void addTablero(Tablero tablero) {
+        this.tableros.add(tablero);
+        tablero.setEquipo(this);
+    }
+
+    public void removeTablero(Tablero tablero) {
+        this.tableros.remove(tablero);
+        tablero.setEquipo(null);
     }
 
 

@@ -41,14 +41,11 @@
             <td th:text="${equipo.id}">1</td>
             <td th:text="${equipo.nombre}">Proyecto 1</td>
             <td class="text-center">
-                <!-- Botón Desplegar -->
-                <button class="btn btn-outline-primary btn-sm mr-1"
-                        type="button"
-                        data-toggle="collapse"
-                        th:attr="data-target='#collapse-equipo-' + ${equipo.id}"
-                        aria-expanded="false">
-                    Ver Usuarios
-                </button>
+                <!-- Ver equipo -->
+                <a class="btn btn-outline-primary btn-sm mr-1"
+                   th:href="@{/equipos/{id}(id=${equipo.id})}">
+                    Ver Equipo
+                </a>
 
                 <!-- Botón Salir del Equipo (Comprueba si la lista contiene la ID del usuario) -->
                 <form th:if="${#lists.contains(equipo.usuarios.![id], session.idUsuarioLogeado)}"
@@ -107,36 +104,6 @@
                 </td>
             </tr>
 
-            <!-- Fila contenedora del desplegable -->
-            <tr>
-                <td colspan="3" class="p-0 border-0">
-                    <div class="collapse p-3 bg-light"
-                         th:id="'collapse-equipo-' + ${equipo.id}"
-                         th:with="usuarios=${(equipo.usuarios != null and !#lists.isEmpty(equipo.usuarios)) ? equipo.usuarios : @equipoService.usuariosEquipo(equipo.id)}">
-                        <table class="table table-sm table-bordered mb-0 bg-white">
-                            <thead class="table-secondary">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Email</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <!-- Recorremos la lista de usuarios ya cargada en la DTO o consultada al servicio -->
-                            <tr th:each="usuario : ${usuarios}">
-                                <td th:text="${usuario.id}">1</td>
-                                <td th:text="${usuario.nombre}">Nombre Ejemplo</td>
-                                <td th:text="${usuario.email}">ejemplo@email.com</td>
-                            </tr>
-                            <!-- Mensaje cuando el equipo no tiene usuarios -->
-                            <tr th:if="${#lists.isEmpty(usuarios)}">
-                                <td colspan="3" class="text-muted text-center py-2">Sin usuarios registrados en este equipo.</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </td>
-            </tr>
         </th:block>
         <!-- Mensaje si la lista de equipos está vacía -->
         <tr th:if="${#lists.isEmpty(equipos)}">

@@ -1,9 +1,12 @@
 package madstodolist.controller;
 
 import madstodolist.dto.EquipoData;
+import madstodolist.dto.TableroData;
+import madstodolist.dto.TareaData;
 import madstodolist.dto.UsuarioData;
-import madstodolist.model.Usuario;
 import madstodolist.service.EquipoService;
+import madstodolist.service.TableroService;
+import madstodolist.service.TareaService;
 import madstodolist.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +26,12 @@ public class EquiposController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private TableroService tableroService;
+
+    @Autowired
+    private TareaService tareaService;
 
     @GetMapping("/equipos")
     public String listaEquipos(Model model, HttpSession session) {
@@ -106,5 +115,56 @@ public class EquiposController {
 
         return "redirect:/equipos";
 
+    }
+
+    @GetMapping("/equipos/{id}")
+    public String verEquipo(@PathVariable("id") Long idEquipo, Model model, HttpSession session) {
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        EquipoData equipo = equipoService.recuperarEquipo(idEquipo);
+        List<UsuarioData> usuarios = equipoService.usuariosEquipo(idEquipo);
+        List<TableroData> tableros = tableroService.tablerosEquipo(idEquipo);
+
+        model.addAttribute("equipo", equipo);
+        model.addAttribute("usuarios", usuarios);
+        model.addAttribute("tableros", tableros);
+
+        return "verEquipo";
+    }
+
+    @PostMapping("/equipos/{id}/tableros/crear")
+    public String crearTablero(@PathVariable("id") Long idEquipo, @RequestParam("nombre") String nombre, HttpSession session) {
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "No autorizado"
+            );
+        }
+
+        tableroService.crearTablero(idEquipo, nombre);
+
+        return "redirect:/equipos/" + idEquipo;
+    }
+
+    @GetMapping("/tableros/{id}")
+    public String verTablero(@PathVariable("id") Long idTablero, Model model, HttpSession session) {
+        Long idUsuario = (Long) session.getAttribute("idUsuarioLogeado");
+        if (idUsuario == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        TableroData tablero = tableroService.recuperarTablero(idTablero);
+        List<TareaData> tareas = tareaService.tareasTablero(idTablero);
+        List<UsuarioData> usuariosEquipo = tableroService.usuariosTablero(idTablero);
+        model.addAttribute("tablero", tablero);
+        model.addAttribute("tareas", tareas);
+        model.addAttribute("usuariosEquipo", usuariosEquipo);
+        model.addAttribute("usuarioLogeadoId", idUsuario);
+
+        return "tablero";
     }
 }

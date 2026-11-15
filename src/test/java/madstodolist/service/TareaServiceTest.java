@@ -1,7 +1,13 @@
 package madstodolist.service;
 
+import madstodolist.dto.TableroData;
 import madstodolist.dto.TareaData;
 import madstodolist.dto.UsuarioData;
+import madstodolist.model.Equipo;
+import madstodolist.model.EstadoTarea;
+import madstodolist.model.Tarea;
+import madstodolist.repository.EquipoRepository;
+import madstodolist.repository.TareaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 // Hemos eliminado todos los @Transactional de los tests
 // y usado un script para limpiar la BD de test después de
@@ -27,6 +34,18 @@ public class TareaServiceTest {
 
     @Autowired
     TareaService tareaService;
+
+    @Autowired
+    TableroService tableroService;
+
+    @Autowired
+    EquipoRepository equipoRepository;
+
+    @Autowired
+    TareaRepository tareaRepository;
+
+    @Autowired
+    EquipoService equipoService;
 
     // Método para inicializar los datos de prueba en la BD
     // Devuelve un mapa con los identificadores del usuario y de la primera tarea añadida
@@ -46,6 +65,37 @@ public class TareaServiceTest {
         Map<String, Long> ids = new HashMap<>();
         ids.put("usuarioId", usuarioNuevo.getId());
         ids.put("tareaId", tarea1.getId());
+        return ids;
+    }
+
+    private Map<String, Long> crearDatosParaAsignacion() {
+        // Creamos dos usuarios
+        UsuarioData usuario1 = new UsuarioData();
+        usuario1.setEmail("miembro@ua");
+        usuario1.setPassword("123");
+        usuario1 = usuarioService.registrar(usuario1);
+
+        UsuarioData usuario2 = new UsuarioData();
+        usuario2.setEmail("externo@ua");
+        usuario2.setPassword("123");
+        usuario2 = usuarioService.registrar(usuario2);
+
+        // Creamos un equipo y añadimos solamente al primer usuario
+        Equipo equipo = equipoRepository.save(new Equipo("Equipo de prueba"));
+        equipoService.añadirUsuarioAEquipo(equipo.getId(), usuario1.getId());
+
+        // Creamos un tablero y una tarea
+        TableroData tablero = tableroService.crearTablero(
+                equipo.getId(), "Tablero de prueba");
+
+        TareaData tarea = tareaService.nuevaTareaTablero(tablero.getId(), usuario1.getId(),"Preparar entrega", EstadoTarea.PENDIENTE);
+
+        Map<String, Long> ids = new HashMap<>();
+        ids.put("usuarioMiembroId", usuario1.getId());
+        ids.put("usuarioExternoId", usuario2.getId());
+        ids.put("tableroId", tablero.getId());
+        ids.put("tareaId", tarea.getId());
+
         return ids;
     }
 
@@ -147,4 +197,105 @@ public class TareaServiceTest {
         assertThat(tareaService.usuarioContieneTarea(usuarioId,tareaId)).isTrue();
     }
 
+
+    @Test
+    public void testNuevaTareaTablero() {
+        // GIVEN
+        // Un usuario y un tablero en la base de datos.
+        Long usuarioId = addUsuarioTareasBD().get("usuarioId");
+        Equipo equipo = equipoRepository.save(new Equipo("Equipo de prueba"));
+        TableroData tablero = tableroService.crearTablero(equipo.getId(),"Tablero de prueba");
+
+        // WHEN
+        // Creamos una tarea pendiente en ese tablero.
+        TareaData nuevaTarea = tareaService.nuevaTareaTablero(tablero.getId(), usuarioId, "Hacer algo", EstadoTarea.PENDIENTE);
+
+        // THEN
+        // Comprobamos que la tarea se ha guardado correctamente.
+        Tarea tareaBD = tareaRepository.findById(nuevaTarea.getId()).orElseThrow();
+        assertThat(tareaBD.getTitulo()).isEqualTo("Hacer algo");
+        assertThat(tareaBD.getTablero().getId()).isEqualTo(tablero.getId());
+        assertThat(tareaBD.getEstado()).isEqualTo(EstadoTarea.PENDIENTE);
+        assertThat(tareaBD.getUsuario().getId()).isEqualTo(usuarioId);
+        assertThat(tareaBD.getUsuarioAsignado()).isNull();
+    }
+
+
+    @Test
+    public void testTareasTablero() {
+        // GIVEN
+        Long usuarioId = addUsuarioTareasBD().get("usuarioId");
+        Equipo equipo = equipoRepository.save(new Equipo("Equipo de prueba"));
+        TableroData tablero1 = tableroService.crearTablero(equipo.getId(), "Tablero 1");
+        TableroData tablero2 = tableroService.crearTablero(equipo.getId(),"Tablero 2");
+
+        tareaService.nuevaTareaTablero(tablero1.getId(), usuarioId, "Tarea del tablero 1", EstadoTarea.PENDIENTE);
+        tareaService.nuevaTareaTablero(tablero2.getId(), usuarioId, "Tarea del tablero 2", EstadoTarea.EN_PROGRESO);
+
+        // WHEN
+        List<TareaData> tareas = tareaService.tareasTablero(tablero1.getId());
+
+        // THEN
+        // Solo obtenemos las tareas del tablero solicitado.
+        assertThat(tareas).extracting(TareaData::getTitulo).containsExactly("Tarea del tablero 1");
+    }
+
+
+    @Test
+    public void testNuevaTareaTableroRechazaTituloVacio() {
+        // GIVEN
+        Long usuarioId = addUsuarioTareasBD().get("usuarioId");
+        Equipo equipo = equipoRepository.save(new Equipo("Equipo de prueba"));
+        TableroData tablero = tableroService.crearTablero(equipo.getId(),"Tablero de prueba");
+
+        // WHEN, THEN
+        assertThatThrownBy(() -> tareaService.nuevaTareaTablero(tablero.getId(), usuarioId, "   ", EstadoTarea.PENDIENTE)).isInstanceOf(TareaServiceException.class);
+    }
+
+    @Test
+    public void testAsignarUsuarioATarea() {
+        // GIVEN
+        Map<String, Long> ids = crearDatosParaAsignacion();
+        Long tareaId = ids.get("tareaId");
+        Long usuarioId = ids.get("usuarioMiembroId");
+
+        // WHEN
+        tareaService.asignarUsuarioATarea(tareaId, usuarioId);
+
+        // THEN
+        Tarea tareaBD = tareaRepository.findById(tareaId).orElseThrow();
+
+        assertThat(tareaBD.getUsuarioAsignado()).isNotNull();
+        assertThat(tareaBD.getUsuarioAsignado().getId()).isEqualTo(usuarioId);
+    }
+
+    @Test
+    public void testNoSePuedeAsignarUsuarioDeOtroEquipo() {
+        // GIVEN
+        Map<String, Long> ids = crearDatosParaAsignacion();
+        Long tareaId = ids.get("tareaId");
+        Long usuarioExternoId = ids.get("usuarioExternoId");
+
+        // WHEN, THEN
+        assertThatThrownBy(() -> tareaService.asignarUsuarioATarea(tareaId, usuarioExternoId)).isInstanceOf(TareaServiceException.class);
+        Tarea tareaBD = tareaRepository.findById(tareaId).orElseThrow();
+        assertThat(tareaBD.getUsuarioAsignado()).isNull();
+    }
+
+    @Test
+    public void testDesasignarUsuarioDeTarea() {
+        // GIVEN
+        Map<String, Long> ids = crearDatosParaAsignacion();
+        Long tareaId = ids.get("tareaId");
+        Long usuarioId = ids.get("usuarioMiembroId");
+
+        tareaService.asignarUsuarioATarea(tareaId, usuarioId);
+
+        // WHEN
+        tareaService.desasignarUsuarioDeTarea(tareaId);
+
+        // THEN
+        Tarea tareaBD = tareaRepository.findById(tareaId).orElseThrow();
+        assertThat(tareaBD.getUsuarioAsignado()).isNull();
+    }
 }
