@@ -185,4 +185,12 @@ public class TareaService {
         tarea.setUsuarioAsignado(null);
         tareaRepository.save(tarea);
     }
+
+    @Transactional
+    public TareaData modificaEstado(Long idTarea, EstadoTarea nuevoEstado){
+        Tarea tarea = tareaRepository.findById(idTarea).orElse(null);
+        tarea.setEstado(nuevoEstado);
+        tareaRepository.save(tarea);
+        return modelMapper.map(tarea, TareaData.class);
+    }
 }

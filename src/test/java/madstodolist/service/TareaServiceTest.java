@@ -298,4 +298,28 @@ public class TareaServiceTest {
         Tarea tareaBD = tareaRepository.findById(tareaId).orElseThrow();
         assertThat(tareaBD.getUsuarioAsignado()).isNull();
     }
+
+    @Test
+    //el test que confirma que el cambio al estado de tarea se salva a BD
+    public void testCambiarEstadoTarea(){
+        // GIVEN
+        // Un usuario y una tarea en la BD
+
+        Map<String, Long> ids = addUsuarioTareasBD();
+        Long usuarioId = ids.get("usuarioId");
+        Long tareaId = ids.get("tareaId");
+
+        //WHEN
+        //el estado de la tarea se cambia
+        tareaService.modificaEstado(tareaId, EstadoTarea.COMPLETADA);
+
+        //THEN
+        //comprobamos que el cambio se salvo al BD
+        TareaData tareaBD= tareaService.findById(tareaId);
+        assertThat(tareaBD.getEstado()).isEqualTo(EstadoTarea.COMPLETADA);
+
+        // y el usuario tiene también esa tarea modificada
+        List<TareaData> tareas = tareaService.allTareasUsuario(usuarioId);
+        assertThat(tareas).contains(tareaBD);
+    }
 }
