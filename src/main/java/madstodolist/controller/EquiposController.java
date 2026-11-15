@@ -163,6 +163,7 @@ public class EquiposController {
         model.addAttribute("tablero", tablero);
         model.addAttribute("tareas", tareas);
         model.addAttribute("usuariosEquipo", usuariosEquipo);
+        model.addAttribute("usuarioLogeadoId", idUsuario);
 
         return "tablero";
     }

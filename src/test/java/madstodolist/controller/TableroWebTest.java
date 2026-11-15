@@ -9,6 +9,7 @@ import madstodolist.model.EstadoTarea;
 import madstodolist.model.Tarea;
 import madstodolist.repository.EquipoRepository;
 import madstodolist.repository.TareaRepository;
+import madstodolist.service.EquipoService;
 import madstodolist.service.TableroService;
 import madstodolist.service.TareaService;
 import madstodolist.service.UsuarioService;
@@ -50,6 +51,9 @@ public class TableroWebTest {
     private TareaService tareaService;
 
     @Autowired
+    private EquipoService equipoService;
+
+    @Autowired
     private EquipoRepository equipoRepository;
 
     @Autowired
@@ -71,6 +75,7 @@ public class TableroWebTest {
         Map<String, Long> ids = new HashMap<>();
         ids.put("usuarioId", usuarioNuevo.getId());
         ids.put("tableroId", tablero.getId());
+        ids.put("equipoId", equipo.getId());
 
         return ids;
     }
@@ -164,5 +169,31 @@ public class TableroWebTest {
         assertThat(tarea.getEstado()).isEqualTo(EstadoTarea.EN_PROGRESO);
         assertThat(tarea.getUsuario().getId()).isEqualTo(usuarioId);
         assertThat(tarea.getUsuarioAsignado()).isNull();
+    }
+
+    @Test
+    public void verTableroMuestraFiltroDeMisTareas() throws Exception {
+        // GIVEN
+        Map<String, Long> ids = crearUsuarioYTableroBD();
+        Long usuarioId = ids.get("usuarioId");
+        Long tableroId = ids.get("tableroId");
+        Long equipoId = ids.get("equipoId");
+        MockHttpSession session = crearSesion(usuarioId);
+
+        // El usuario pertenece al equipo del tablero
+        equipoService.añadirUsuarioAEquipo(equipoId, usuarioId);
+
+        // Creamos una tarea y se la asignamos al usuario
+        tareaService.nuevaTareaTablero(tableroId, usuarioId,"Mi tarea asignada", EstadoTarea.PENDIENTE);
+        Tarea tarea = tareaRepository.findByTablero_IdOrderByIdAsc(tableroId).get(0);
+        tareaService.asignarUsuarioATarea(tarea.getId(), usuarioId);
+
+        // WHEN, THEN
+        mockMvc.perform(get("/tableros/" + tableroId).session(session))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("usuarioLogeadoId", usuarioId))
+                .andExpect(content().string(containsString("Filtrar por mis tareas")))
+                .andExpect(content().string(containsString("draggable=\"true\"")))
+                .andExpect(content().string(containsString("data-usuario-asignado-id=\"" + usuarioId + "\"")));
     }
 }

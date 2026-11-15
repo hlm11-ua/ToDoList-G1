@@ -6,6 +6,16 @@
     <div th:replace="~{fragments :: navbar}"></div>
     <h2 class="mb-4" th:text="${tablero.nombre}">Nombre tablero</h2>
 
+    <div class="form-check mb-3">
+        <input class="form-check-input"
+               type="checkbox"
+               id="filtrar-mis-tareas"
+               th:attr="data-usuario-logeado-id=${usuarioLogeadoId}"/>
+        <label class="form-check-label" for="filtrar-mis-tareas">
+            Filtrar por mis tareas
+        </label>
+    </div>
+
     <!-- Columnas del tablero -->
     <div class="row g-3">
         <!-- Pendiente -->
@@ -17,7 +27,9 @@
                 <div class="card-body">
                     <div th:each="tarea : ${tareas}"
                          th:if="${tarea.estado.toString() == 'PENDIENTE'}"
-                         class="tarea-card card mb-2">
+                         class="tarea-card card mb-2"
+                         draggable="true"
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId}">
                         <div class="card-body py-2"
                              th:text="${tarea.titulo}">
                             Título de la tarea
@@ -122,7 +134,9 @@
                 <div class="card-body">
                     <div th:each="tarea : ${tareas}"
                          th:if="${tarea.estado.toString() == 'EN_PROGRESO'}"
-                         class="tarea-card card mb-2">
+                         class="tarea-card card mb-2"
+                         draggable="true"
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId}">
                         <div class="card-body py-2"
                              th:text="${tarea.titulo}">
                             Título de la tarea
@@ -226,7 +240,9 @@
                 <div class="card-body">
                     <div th:each="tarea : ${tareas}"
                          th:if="${tarea.estado.toString() == 'COMPLETADA'}"
-                         class="tarea-card card mb-2">
+                         class="tarea-card card mb-2"
+                         draggable="true"
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId}">
                         <div class="card-body py-2"
                              th:text="${tarea.titulo}">
                             Título de la tarea
@@ -381,10 +397,73 @@
         all: unset;
         display: block;
     }
+
+    .tarea-card.arrastrando {
+        opacity: 0.5;
+    }
+
+    .tablero-columna .card-body {
+        transition: background-color 0.2s ease;
+    }
+
+    .tablero-columna .card-body.zona-soltar {
+        background-color: #e8f1fb;
+    }
 </style>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Filtramos las tareas asignadas al usuario que ha iniciado sesión
+        const filtroMisTareas = document.getElementById("filtrar-mis-tareas");
+        filtroMisTareas.addEventListener("change", function () {
+            const usuarioLogeadoId = filtroMisTareas.dataset.usuarioLogeadoId;
+            document.querySelectorAll(".tarea-card").forEach(function (tarjeta) {
+                const usuarioAsignadoId = tarjeta.dataset.usuarioAsignadoId;
+                if (filtroMisTareas.checked) {
+                    tarjeta.style.display = usuarioAsignadoId === usuarioLogeadoId ? "" : "none";
+                } else {
+                    tarjeta.style.display = "";
+                }
+            });
+        });
+
+        // Permitimos arrastrar las tareas entre las columnas del tablero
+        let tareaArrastrada = null;
+
+        // Cuando empezamos a arrastrar una tarea
+        document.querySelectorAll(".tarea-card").forEach(function (tarjeta) {
+            tarjeta.addEventListener("dragstart", function (event) {
+                tareaArrastrada = tarjeta;
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", "tarea");
+                tarjeta.classList.add("arrastrando");
+            });
+
+            tarjeta.addEventListener("dragend", function () {
+                tarjeta.classList.remove("arrastrando");
+                tareaArrastrada = null;
+            });
+        });
+
+        // Permitimos soltar tareas en cualquiera de las columnas
+        document.querySelectorAll(".tablero-columna").forEach(function (columna) {
+            columna.addEventListener("dragover", function (event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+            });
+            columna.addEventListener("drop", function (event) {
+                event.preventDefault();
+                if (tareaArrastrada === null) {
+                    return;
+                }
+                const zonaTareas = columna.querySelector(".card-body");
+                const zonaAnadir = zonaTareas.querySelector(".zona-anadir");
+
+                // Colocamos la tarea antes del formulario para añadir tareas
+                zonaTareas.insertBefore(tareaArrastrada, zonaAnadir);
+            });
+        });
+
         // Mostramos el formulario que aparece tras dar clic al añadir tarea en el tablero
         document.querySelectorAll(".boton-anadir").forEach(function (boton) {
             boton.addEventListener("click", function () {
