@@ -108,6 +108,7 @@ public class RegistradoController {
     @PostMapping("/registrados/{id}/bloqueo")
     public String cambiarBloqueo(@PathVariable(value="id") Long id) {
         comprobarAdministrador();
+        comprobarNoEsAdmin(obtenerUsuario(id));
         usuarioService.cambiarBloqueo(id);
         return "redirect:/registrados";
     }
@@ -115,6 +116,7 @@ public class RegistradoController {
     @PostMapping("/registrados/{id}/bloquear")
     public String bloquear(@PathVariable(value="id") Long id) {
         comprobarAdministrador();
+        comprobarNoEsAdmin(obtenerUsuario(id));
         usuarioService.bloquear(id);
         return "redirect:/registrados";
     }
@@ -131,6 +133,20 @@ public class RegistradoController {
         UsuarioData usuarioActual = usuarioLogeado == null ? null : usuarioService.findById(usuarioLogeado);
         if (usuarioActual == null || !usuarioActual.isAdmin()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+    }
+
+    private UsuarioData obtenerUsuario(Long id) {
+        UsuarioData usuario = usuarioService.findById(id);
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+        return usuario;
+    }
+
+    private void comprobarNoEsAdmin(UsuarioData usuario) {
+        if (usuario.isAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No se puede bloquear a un administrador");
         }
     }
 }
