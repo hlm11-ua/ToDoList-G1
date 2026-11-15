@@ -4,6 +4,7 @@ import madstodolist.authentication.ManagerUserSession;
 import madstodolist.dto.UsuarioData;
 import madstodolist.service.EquipoService;
 import madstodolist.service.UsuarioService;
+import madstodolist.service.UsuarioServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -11,7 +12,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
 
@@ -47,7 +50,42 @@ public class RegistradoController {
 
         model.addAttribute("usuario", usuario);
         model.addAttribute("EsAdmin", esAdmin);
+        model.addAttribute("esPropioUsuario", usuarioLogeado.equals(id));
         return "detallesRegistrado";
+    }
+
+    @PostMapping("/registrados/{id}/editar")
+    public String editarRegistrado(@PathVariable(value="id") Long id,
+                                   @RequestParam(value="nombre", required=false) String nombre,
+                                   @RequestParam(value="email", required=false) String email,
+                                   @RequestParam(value="password", required=false) String password,
+                                   RedirectAttributes flash) {
+        // Solo el propio usuario puede editar sus datos (ni siquiera un admin puede editar a otro)
+        Long usuarioLogeado = managerUserSession.usuarioLogeado();
+        if (usuarioLogeado == null || !usuarioLogeado.equals(id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
+        }
+
+        UsuarioData actual = usuarioService.findById(id);
+        if (actual == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+
+        UsuarioData datos = new UsuarioData();
+        datos.setId(id);
+        datos.setNombre(nombre);
+        datos.setEmail(email);
+        // Si no se escribe una contraseña nueva se mantiene la actual
+        datos.setPassword(password == null || password.isEmpty() ? actual.getPassword() : password);
+
+        try {
+            UsuarioData editado = usuarioService.editarUsuario(datos);
+            managerUserSession.logearUsuario(editado.getId(), editado.getNombre(), editado.isAdmin());
+            flash.addFlashAttribute("mensaje", "Datos actualizados correctamente");
+        } catch (UsuarioServiceException e) {
+            flash.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/registrados/" + id;
     }
 
     @GetMapping("/registrados")
