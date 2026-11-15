@@ -189,6 +189,9 @@ public class TareaService {
     @Transactional
     public TareaData modificaEstado(Long idTarea, EstadoTarea nuevoEstado){
         Tarea tarea = tareaRepository.findById(idTarea).orElse(null);
+       if(tarea == null){
+           throw new TareaServiceException("Id " + idTarea + " no existe");
+       }
         tarea.setEstado(nuevoEstado);
         tareaRepository.save(tarea);
         return modelMapper.map(tarea, TareaData.class);

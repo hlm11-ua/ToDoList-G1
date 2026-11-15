@@ -322,4 +322,15 @@ public class TareaServiceTest {
         List<TareaData> tareas = tareaService.allTareasUsuario(usuarioId);
         assertThat(tareas).contains(tareaBD);
     }
+
+    @Test
+    public void testModificaEstadoTareaNoExistente(){
+        //GIVEN
+        //la base de datos esta vacia y no existe una tarea con Id
+
+        //WHEN, THEN
+        //modificar el estado de una tarea que no existe lanza una excepción
+        assertThatThrownBy(() -> tareaService.modificaEstado(999L, EstadoTarea.PENDIENTE))
+                .isInstanceOf(TareaServiceException.class);
+    }
 }
