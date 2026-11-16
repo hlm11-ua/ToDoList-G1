@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.jdbc.Sql;
 
+import javax.validation.constraints.Null;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -331,6 +332,19 @@ public class TareaServiceTest {
         //WHEN, THEN
         //modificar el estado de una tarea que no existe lanza una excepción
         assertThatThrownBy(() -> tareaService.modificaEstado(999L, EstadoTarea.PENDIENTE))
+                .isInstanceOf(TareaServiceException.class);
+    }
+
+    @Test
+    public void testModificaEstadoConNullEstado(){
+        //GIVEN
+        //una tarea que existe en el base de datos con ID
+        Map<String, Long> ids = addUsuarioTareasBD();
+        Long idTarea = ids.get("tareaId");
+
+        //WHEN, THEN
+        //el estado se cambia a NULL, se tira un exception
+        assertThatThrownBy(() -> tareaService.modificaEstado(idTarea, null))
                 .isInstanceOf(TareaServiceException.class);
     }
 }

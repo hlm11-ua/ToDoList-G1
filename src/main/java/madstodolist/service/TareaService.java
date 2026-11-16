@@ -192,6 +192,9 @@ public class TareaService {
        if(tarea == null){
            throw new TareaServiceException("Id " + idTarea + " no existe");
        }
+       if(nuevoEstado == null){
+           throw new TareaServiceException("El estado de la tarea no puede ser " + nuevoEstado);
+       }
         tarea.setEstado(nuevoEstado);
         tareaRepository.save(tarea);
         return modelMapper.map(tarea, TareaData.class);
