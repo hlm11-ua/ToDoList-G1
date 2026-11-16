@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.allOf;
 
 import java.util.List;
 import java.util.Map;
@@ -220,5 +221,26 @@ public class TableroWebTest {
                 .andExpect(redirectedUrl("/tableros/" + tableroId));
 
         assertThat(tareaService.findById(tareaId).getEstado()).isEqualTo(EstadoTarea.EN_PROGRESO);
+    }
+
+    // Test: el tablero incluye los datos que necesita el drag & drop para guardar el estado
+    @Test
+    public void verTableroIncluyeDatosParaGuardarEstadoAlArrastrar() throws Exception {
+        // GIVEN un tablero con una tarea
+        Map<String, Long> ids = crearUsuarioYTableroBD();
+        Long tableroId = ids.get("tableroId");
+        Long tareaId = tareaService.nuevaTareaTablero(tableroId, ids.get("usuarioId"),
+                "Tarea del tablero", EstadoTarea.PENDIENTE).getId();
+        MockHttpSession session = crearSesion(ids.get("usuarioId"));
+
+        // WHEN, THEN las columnas indican su estado y la tarjeta indica su id
+        mockMvc.perform(get("/tableros/" + tableroId).session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("data-estado=\"PENDIENTE\""),
+                        containsString("data-estado=\"EN_PROGRESO\""),
+                        containsString("data-estado=\"COMPLETADA\""),
+                        containsString("data-tarea-id=\"" + tareaId + "\"")
+                )));
     }
 }

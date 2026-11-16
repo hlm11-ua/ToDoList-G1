@@ -19,7 +19,7 @@
     <!-- Columnas del tablero -->
     <div class="row g-3">
         <!-- Pendiente -->
-        <div class="col-md-4 tablero-columna" id="columna-pendiente">
+        <div class="col-md-4 tablero-columna" id="columna-pendiente" data-estado="PENDIENTE">
             <div class="card h-100">
                 <div class="card-header bg-secondary text-white">
                     <h6 class="mb-0">Pendiente</h6>
@@ -29,7 +29,7 @@
                          th:if="${tarea.estado.toString() == 'PENDIENTE'}"
                          class="tarea-card card mb-2"
                          draggable="true"
-                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId}">
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId},data-tarea-id=${tarea.id}">
                         <div class="card-body py-2"
                              th:text="${tarea.titulo}">
                             Título de la tarea
@@ -126,7 +126,7 @@
         </div>
 
         <!-- En progreso -->
-        <div class="col-md-4 tablero-columna" id="columna-en-progreso">
+        <div class="col-md-4 tablero-columna" id="columna-en-progreso" data-estado="EN_PROGRESO">
             <div class="card h-100">
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0">En progreso</h6>
@@ -136,7 +136,7 @@
                          th:if="${tarea.estado.toString() == 'EN_PROGRESO'}"
                          class="tarea-card card mb-2"
                          draggable="true"
-                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId}">
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId},data-tarea-id=${tarea.id}">
                         <div class="card-body py-2"
                              th:text="${tarea.titulo}">
                             Título de la tarea
@@ -232,8 +232,7 @@
         </div>
 
         <!-- Completada -->
-        <div class="col-md-4 tablero-columna" id="columna-completada">
-            <div class="card h-100">
+        <div class="col-md-4 tablero-columna" id="columna-completada" data-estado="COMPLETADA">            <div class="card h-100">
                 <div class="card-header bg-success text-white">
                     <h6 class="mb-0">Completada</h6>
                 </div>
@@ -242,7 +241,7 @@
                          th:if="${tarea.estado.toString() == 'COMPLETADA'}"
                          class="tarea-card card mb-2"
                          draggable="true"
-                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId}">
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId},data-tarea-id=${tarea.id}">
                         <div class="card-body py-2"
                              th:text="${tarea.titulo}">
                             Título de la tarea
@@ -461,6 +460,22 @@
 
                 // Colocamos la tarea antes del formulario para añadir tareas
                 zonaTareas.insertBefore(tareaArrastrada, zonaAnadir);
+
+                // Guardamos el nuevo estado en el servidor
+                const tareaId = tareaArrastrada.dataset.tareaId;
+                const nuevoEstado = columna.dataset.estado;
+
+                fetch("/tareas/" + tareaId + "/estado", {
+                    method: "POST",
+                    body: new URLSearchParams({ estado: nuevoEstado })
+                }).then(function (respuesta) {
+                    // Si el servidor no lo acepta, recargamos para mostrar el estado real
+                    if (!respuesta.ok) {
+                        window.location.reload();
+                    }
+                }).catch(function () {
+                    window.location.reload();
+                });
             });
         });
 
