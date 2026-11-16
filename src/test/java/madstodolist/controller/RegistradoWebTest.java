@@ -4,7 +4,9 @@ import madstodolist.dto.EquipoData;
 import madstodolist.dto.UsuarioData;
 import madstodolist.service.EquipoService;
 import madstodolist.service.UsuarioService;
+import madstodolist.service.UsuarioServiceException;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,9 +18,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -56,6 +64,128 @@ public class RegistradoWebTest {
                 .andExpect(model().attribute("usuario", usuarioMock))
                 .andExpect(content().string(containsString("Juan Pérez")))
                 .andExpect(content().string(containsString("juan@ua.es")));
+    }
+
+    // ---- Edición del perfil: solo el propio usuario ----
+
+    private UsuarioData usuario(Long id, String nombre, String email, boolean admin) {
+        UsuarioData u = new UsuarioData();
+        u.setId(id);
+        u.setNombre(nombre);
+        u.setEmail(email);
+        u.setPassword("1234");
+        u.setAdmin(admin);
+        return u;
+    }
+
+    private MockHttpSession sesion(Long id, String nombre, boolean admin) {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", id);
+        session.setAttribute("nombreUsuarioLogeado", nombre);
+        session.setAttribute("esAdmin", admin);
+        return session;
+    }
+
+    @Test
+    public void propioUsuarioVeFormularioEditable() throws Exception {
+        when(usuarioService.findById(2L)).thenReturn(usuario(2L, "Juan", "juan@ua.es", false));
+
+        this.mockMvc.perform(get("/registrados/2").session(sesion(2L, "Juan", false)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("esPropioUsuario", true))
+                .andExpect(content().string(containsString("form-editar-usuario")))
+                .andExpect(content().string(containsString("/registrados/2/editar")))
+                .andExpect(content().string(containsString("Confirmar cambios")));
+    }
+
+    @Test
+    public void adminViendoOtroPerfilNoVeFormularioNiBotonConfirmar() throws Exception {
+        when(usuarioService.findById(1L)).thenReturn(usuario(1L, "Admin", "admin@ua.es", true));
+        when(usuarioService.findById(2L)).thenReturn(usuario(2L, "Juan", "juan@ua.es", false));
+
+        this.mockMvc.perform(get("/registrados/2").session(sesion(1L, "Admin", true)))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("esPropioUsuario", false))
+                .andExpect(content().string(containsString("juan@ua.es")))
+                .andExpect(content().string(not(containsString("form-editar-usuario"))))
+                .andExpect(content().string(not(containsString("Confirmar cambios"))));
+    }
+
+    @Test
+    public void propioUsuarioEditaSusDatosYRedirige() throws Exception {
+        when(usuarioService.findById(2L)).thenReturn(usuario(2L, "Juan", "juan@ua.es", false));
+        when(usuarioService.editarUsuario(any(UsuarioData.class)))
+                .thenReturn(usuario(2L, "Juan Nuevo", "nuevo@ua.es", false));
+
+        this.mockMvc.perform(post("/registrados/2/editar").session(sesion(2L, "Juan", false))
+                        .param("nombre", "Juan Nuevo")
+                        .param("email", "nuevo@ua.es")
+                        .param("password", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrados/2"))
+                .andExpect(flash().attribute("mensaje", "Datos actualizados correctamente"));
+
+        ArgumentCaptor<UsuarioData> captor = ArgumentCaptor.forClass(UsuarioData.class);
+        verify(usuarioService).editarUsuario(captor.capture());
+        assertThat(captor.getValue().getId()).isEqualTo(2L);
+        assertThat(captor.getValue().getNombre()).isEqualTo("Juan Nuevo");
+        assertThat(captor.getValue().getEmail()).isEqualTo("nuevo@ua.es");
+        // Con la contraseña vacía se mantiene la actual
+        assertThat(captor.getValue().getPassword()).isEqualTo("1234");
+    }
+
+    @Test
+    public void propioUsuarioPuedeCambiarSuPassword() throws Exception {
+        when(usuarioService.findById(2L)).thenReturn(usuario(2L, "Juan", "juan@ua.es", false));
+        when(usuarioService.editarUsuario(any(UsuarioData.class)))
+                .thenReturn(usuario(2L, "Juan", "juan@ua.es", false));
+
+        this.mockMvc.perform(post("/registrados/2/editar").session(sesion(2L, "Juan", false))
+                        .param("nombre", "Juan")
+                        .param("email", "juan@ua.es")
+                        .param("password", "nueva"))
+                .andExpect(status().is3xxRedirection());
+
+        ArgumentCaptor<UsuarioData> captor = ArgumentCaptor.forClass(UsuarioData.class);
+        verify(usuarioService).editarUsuario(captor.capture());
+        assertThat(captor.getValue().getPassword()).isEqualTo("nueva");
+    }
+
+    @Test
+    public void adminNoPuedeEditarOtroUsuario() throws Exception {
+        when(usuarioService.findById(1L)).thenReturn(usuario(1L, "Admin", "admin@ua.es", true));
+        when(usuarioService.findById(2L)).thenReturn(usuario(2L, "Juan", "juan@ua.es", false));
+
+        this.mockMvc.perform(post("/registrados/2/editar").session(sesion(1L, "Admin", true))
+                        .param("nombre", "Hackeado")
+                        .param("email", "juan@ua.es"))
+                .andExpect(status().isForbidden());
+
+        verify(usuarioService, never()).editarUsuario(any(UsuarioData.class));
+    }
+
+    @Test
+    public void editarSinUsuarioLogeadoDevuelve403() throws Exception {
+        this.mockMvc.perform(post("/registrados/2/editar")
+                        .param("nombre", "Hackeado")
+                        .param("email", "juan@ua.es"))
+                .andExpect(status().isForbidden());
+
+        verify(usuarioService, never()).editarUsuario(any(UsuarioData.class));
+    }
+
+    @Test
+    public void editarConDatosErroneosMuestraError() throws Exception {
+        when(usuarioService.findById(2L)).thenReturn(usuario(2L, "Juan", "juan@ua.es", false));
+        when(usuarioService.editarUsuario(any(UsuarioData.class)))
+                .thenThrow(new UsuarioServiceException("El email otro@ua.es ya está registrado"));
+
+        this.mockMvc.perform(post("/registrados/2/editar").session(sesion(2L, "Juan", false))
+                        .param("nombre", "Juan")
+                        .param("email", "otro@ua.es"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrados/2"))
+                .andExpect(flash().attribute("error", "El email otro@ua.es ya está registrado"));
     }
 
     @Test

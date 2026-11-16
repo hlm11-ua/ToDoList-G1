@@ -121,4 +121,31 @@ public class UsuarioService {
         }
         return false;
     }
+
+    @Transactional 
+    public UsuarioData editarUsuario(UsuarioData usuarioData) {
+        Usuario usuario = usuarioRepository.findById(usuarioData.getId()).orElse(null);
+        if (usuario == null) {
+            throw new UsuarioServiceException("El usuario " + usuarioData.getId() + " no existe");
+        }
+        if (usuarioData.getNombre() == null || usuarioData.getNombre().isEmpty()) {
+            throw new UsuarioServiceException("El nombre del usuario no puede ser nulo o vacío");
+        }
+        if (usuarioData.getEmail() == null || usuarioData.getEmail().isEmpty()) {
+            throw new UsuarioServiceException("El email del usuario no puede ser nulo o vacío");
+        }
+        if (usuarioData.getPassword() == null || usuarioData.getPassword().isEmpty()) {
+            throw new UsuarioServiceException("La contraseña del usuario no puede ser nula o vacía");
+        }
+        if (!usuario.getEmail().equals(usuarioData.getEmail())) {
+            Optional<Usuario> usuarioExistente = usuarioRepository.findByEmail(usuarioData.getEmail());
+            if (usuarioExistente.isPresent()) {
+                throw new UsuarioServiceException("El email " + usuarioData.getEmail() + " ya está registrado");
+            }
+        }
+        usuario.setNombre(usuarioData.getNombre());
+        usuario.setEmail(usuarioData.getEmail());
+        usuario.setPassword(usuarioData.getPassword());
+        return modelMapper.map(usuarioRepository.save(usuario), UsuarioData.class);
+    }
 }
