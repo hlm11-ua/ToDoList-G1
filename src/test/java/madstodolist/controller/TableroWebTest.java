@@ -2,6 +2,7 @@
 package madstodolist.controller;
 
 import madstodolist.authentication.ManagerUserSession;
+import madstodolist.dto.EquipoData;
 import madstodolist.dto.TableroData;
 import madstodolist.dto.UsuarioData;
 import madstodolist.model.Equipo;
@@ -14,6 +15,7 @@ import madstodolist.service.TableroService;
 import madstodolist.service.TareaService;
 import madstodolist.service.UsuarioService;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -242,5 +244,81 @@ public class TableroWebTest {
                         containsString("data-estado=\"COMPLETADA\""),
                         containsString("data-tarea-id=\"" + tareaId + "\"")
                 )));
+    }
+
+    @Test
+    public void adminPuedeModificarNombreTablero() throws Exception {
+        UsuarioData admin = new UsuarioData();
+        admin.setEmail("admin@ua.es");
+        admin.setPassword("1234");
+        admin.setAdmin(true);
+        admin = usuarioService.registrar(admin);
+
+        EquipoData equipo = equipoService.crearEquipo("Equipo MADS");
+        TableroData tablero = tableroService.crearTablero(equipo.getId(), "Tablero Antiguo");
+
+        this.mockMvc.perform(post("/tableros/" + tablero.getId() + "/update")
+                        .param("nombre", "Tablero Nuevo")
+                        .sessionAttr("idUsuarioLogeado", admin.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/equipos/" + equipo.getId()));
+
+        TableroData tableroActualizado = tableroService.recuperarTablero(tablero.getId());
+        assertThat(tableroActualizado.getNombre()).isEqualTo("Tablero Nuevo");
+    }
+
+    @Test
+    public void adminPuedeBorrarTablero() throws Exception {
+        UsuarioData admin = new UsuarioData();
+        admin.setEmail("admin2@ua.es");
+        admin.setPassword("1234");
+        admin.setAdmin(true);
+        admin = usuarioService.registrar(admin);
+
+        EquipoData equipo = equipoService.crearEquipo("Equipo MADS");
+        TableroData tablero = tableroService.crearTablero(equipo.getId(), "Tablero A Borrar");
+
+        this.mockMvc.perform(post("/tableros/" + tablero.getId() + "/delete")
+                        .sessionAttr("idUsuarioLogeado", admin.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/equipos/" + equipo.getId()));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            tableroService.recuperarTablero(tablero.getId());
+        });
+    }
+
+    @Test
+    public void usuarioNoAdminNoPuedeModificarNiBorrarTablero() throws Exception {
+        UsuarioData usuarioNormal = new UsuarioData();
+        usuarioNormal.setEmail("normal@ua.es");
+        usuarioNormal.setPassword("1234");
+        usuarioNormal.setAdmin(false);
+        usuarioNormal = usuarioService.registrar(usuarioNormal);
+
+        EquipoData equipo = equipoService.crearEquipo("Equipo MADS");
+        TableroData tablero = tableroService.crearTablero(equipo.getId(), "Tablero Protegido");
+
+        this.mockMvc.perform(post("/tableros/" + tablero.getId() + "/update")
+                        .param("nombre", "Hackeado")
+                        .sessionAttr("idUsuarioLogeado", usuarioNormal.getId()))
+                .andExpect(status().isForbidden());
+
+        this.mockMvc.perform(post("/tableros/" + tablero.getId() + "/delete")
+                        .sessionAttr("idUsuarioLogeado", usuarioNormal.getId()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void usuarioNoLogeadoRecibeForbidden() throws Exception {
+        EquipoData equipo = equipoService.crearEquipo("Equipo MADS");
+        TableroData tablero = tableroService.crearTablero(equipo.getId(), "Tablero Publico");
+
+        this.mockMvc.perform(post("/tableros/" + tablero.getId() + "/update")
+                        .param("nombre", "Sin Sesion"))
+                .andExpect(status().isForbidden());
+
+        this.mockMvc.perform(post("/tableros/" + tablero.getId() + "/delete"))
+                .andExpect(status().isForbidden());
     }
 }

@@ -119,4 +119,11 @@ public class TableroService {
         // 3. Eliminar el tablero
         tableroRepository.delete(tablero);
     }
+
+    @Transactional(readOnly = true)
+    public Long obtenerEquipoIdDeTablero(Long idTablero) {
+        Tablero tablero = tableroRepository.findById(idTablero)
+                .orElseThrow(() -> new IllegalArgumentException("Tablero no encontrado"));
+        return tablero.getEquipo().getId();
+    }
 }
