@@ -29,4 +29,4 @@ Una vez lanzada la aplicación puedes abrir un navegador y probar la página de 
 - [http://localhost:8080/login](http://localhost:8080/login)
 
 ## Enlace de trello
-- https://trello.com/b/SCmFs2bs
+- https://trello.com/invite/b/6aeb0ebc0ed146d955820743/ATTI8506cb1d668588a0332d1f2221dc5382B95C36A5/todolist-g1
