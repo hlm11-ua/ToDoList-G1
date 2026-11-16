@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.jdbc.Sql;
 
+import javax.validation.constraints.Null;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -297,5 +298,53 @@ public class TareaServiceTest {
         // THEN
         Tarea tareaBD = tareaRepository.findById(tareaId).orElseThrow();
         assertThat(tareaBD.getUsuarioAsignado()).isNull();
+    }
+
+    @Test
+    //el test que confirma que el cambio al estado de tarea se salva a BD
+    public void testCambiarEstadoTarea(){
+        // GIVEN
+        // Un usuario y una tarea en la BD
+
+        Map<String, Long> ids = addUsuarioTareasBD();
+        Long usuarioId = ids.get("usuarioId");
+        Long tareaId = ids.get("tareaId");
+
+        //WHEN
+        //el estado de la tarea se cambia
+        tareaService.modificaEstado(tareaId, EstadoTarea.COMPLETADA);
+
+        //THEN
+        //comprobamos que el cambio se salvo al BD
+        TareaData tareaBD= tareaService.findById(tareaId);
+        assertThat(tareaBD.getEstado()).isEqualTo(EstadoTarea.COMPLETADA);
+
+        // y el usuario tiene también esa tarea modificada
+        List<TareaData> tareas = tareaService.allTareasUsuario(usuarioId);
+        assertThat(tareas).contains(tareaBD);
+    }
+
+    @Test
+    public void testModificaEstadoTareaNoExistente(){
+        //GIVEN
+        //la base de datos esta vacia y no existe una tarea con Id
+
+        //WHEN, THEN
+        //modificar el estado de una tarea que no existe lanza una excepción
+        assertThatThrownBy(() -> tareaService.modificaEstado(999L, EstadoTarea.PENDIENTE))
+                .isInstanceOf(TareaServiceException.class);
+    }
+
+    @Test
+    public void testModificaEstadoConNullEstado(){
+        //GIVEN
+        //una tarea que existe en el base de datos con ID
+        Map<String, Long> ids = addUsuarioTareasBD();
+        Long idTarea = ids.get("tareaId");
+
+        //WHEN, THEN
+        //el estado se cambia a NULL, se tira un exception
+        assertThatThrownBy(() -> tareaService.modificaEstado(idTarea, null))
+                .isInstanceOf(TareaServiceException.class);
     }
 }

@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.allOf;
 
 import java.util.List;
 import java.util.Map;
@@ -195,5 +196,51 @@ public class TableroWebTest {
                 .andExpect(content().string(containsString("Filtrar por mis tareas")))
                 .andExpect(content().string(containsString("draggable=\"true\"")))
                 .andExpect(content().string(containsString("data-usuario-asignado-id=\"" + usuarioId + "\"")));
+    }
+
+    // Test: cualquier miembro puede mover una tarea del tablero aunque no la haya creado
+    @Test
+    public void miembroPuedeCambiarEstadoDeTareaDelTablero() throws Exception {
+        // GIVEN un tablero con una tarea creada por un usuario
+        Map<String, Long> ids = crearUsuarioYTableroBD();
+        Long tableroId = ids.get("tableroId");
+        Long tareaId = tareaService.nuevaTareaTablero(tableroId, ids.get("usuarioId"),
+                "Tarea del tablero", EstadoTarea.PENDIENTE).getId();
+
+        // y otro usuario logeado que NO es el creador de la tarea
+        UsuarioData otro = new UsuarioData();
+        otro.setEmail("otro@ua");
+        otro.setPassword("123");
+        Long otroId = usuarioService.registrar(otro).getId();
+        when(managerUserSession.usuarioLogeado()).thenReturn(otroId);
+
+        // WHEN, THEN puede moverla y se redirige al tablero
+        this.mockMvc.perform(post("/tareas/" + tareaId + "/estado")
+                        .param("estado", "EN_PROGRESO"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/tableros/" + tableroId));
+
+        assertThat(tareaService.findById(tareaId).getEstado()).isEqualTo(EstadoTarea.EN_PROGRESO);
+    }
+
+    // Test: el tablero incluye los datos que necesita el drag & drop para guardar el estado
+    @Test
+    public void verTableroIncluyeDatosParaGuardarEstadoAlArrastrar() throws Exception {
+        // GIVEN un tablero con una tarea
+        Map<String, Long> ids = crearUsuarioYTableroBD();
+        Long tableroId = ids.get("tableroId");
+        Long tareaId = tareaService.nuevaTareaTablero(tableroId, ids.get("usuarioId"),
+                "Tarea del tablero", EstadoTarea.PENDIENTE).getId();
+        MockHttpSession session = crearSesion(ids.get("usuarioId"));
+
+        // WHEN, THEN las columnas indican su estado y la tarjeta indica su id
+        mockMvc.perform(get("/tableros/" + tableroId).session(session))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("data-estado=\"PENDIENTE\""),
+                        containsString("data-estado=\"EN_PROGRESO\""),
+                        containsString("data-estado=\"COMPLETADA\""),
+                        containsString("data-tarea-id=\"" + tareaId + "\"")
+                )));
     }
 }

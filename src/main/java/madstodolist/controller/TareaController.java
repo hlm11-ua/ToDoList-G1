@@ -164,5 +164,29 @@ public class TareaController {
         tareaService.desasignarUsuarioDeTarea(idTarea);
         return "redirect:/tableros/" + tarea.getTableroId();
     }
+
+    //para Modificar Estado de tareas (board de equipo y personal)
+    @PostMapping("/tareas/{id}/estado")
+    public String cambiarEstadoTarea(@PathVariable(value = "id") Long idTarea,
+                                     @RequestParam("estado") EstadoTarea estado) {
+        TareaData tarea = tareaService.findById(idTarea);
+        if (tarea == null) {
+            throw new TareaNotFoundException();
+        }
+
+        if (tarea.getTableroId() != null) {
+            // Tarea de tablero: cualquier usuario logeado puede moverla
+            if (managerUserSession.usuarioLogeado() == null) {
+                throw new UsuarioNoLogeadoException();
+            }
+            tareaService.modificaEstado(idTarea, estado);
+            return "redirect:/tableros/" + tarea.getTableroId();
+        }
+
+        // Tarea personal: solo su dueño
+        comprobarUsuarioLogeado(tarea.getUsuarioId());
+        tareaService.modificaEstado(idTarea, estado);
+        return "redirect:/usuarios/" + tarea.getUsuarioId() + "/tareas";
+    }
 }
 
