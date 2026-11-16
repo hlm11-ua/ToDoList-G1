@@ -196,4 +196,29 @@ public class TableroWebTest {
                 .andExpect(content().string(containsString("draggable=\"true\"")))
                 .andExpect(content().string(containsString("data-usuario-asignado-id=\"" + usuarioId + "\"")));
     }
+
+    // Test: cualquier miembro puede mover una tarea del tablero aunque no la haya creado
+    @Test
+    public void miembroPuedeCambiarEstadoDeTareaDelTablero() throws Exception {
+        // GIVEN un tablero con una tarea creada por un usuario
+        Map<String, Long> ids = crearUsuarioYTableroBD();
+        Long tableroId = ids.get("tableroId");
+        Long tareaId = tareaService.nuevaTareaTablero(tableroId, ids.get("usuarioId"),
+                "Tarea del tablero", EstadoTarea.PENDIENTE).getId();
+
+        // y otro usuario logeado que NO es el creador de la tarea
+        UsuarioData otro = new UsuarioData();
+        otro.setEmail("otro@ua");
+        otro.setPassword("123");
+        Long otroId = usuarioService.registrar(otro).getId();
+        when(managerUserSession.usuarioLogeado()).thenReturn(otroId);
+
+        // WHEN, THEN puede moverla y se redirige al tablero
+        this.mockMvc.perform(post("/tareas/" + tareaId + "/estado")
+                        .param("estado", "EN_PROGRESO"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/tableros/" + tableroId));
+
+        assertThat(tareaService.findById(tareaId).getEstado()).isEqualTo(EstadoTarea.EN_PROGRESO);
+    }
 }

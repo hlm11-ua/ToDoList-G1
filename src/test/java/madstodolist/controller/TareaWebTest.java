@@ -13,6 +13,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
+import madstodolist.model.EstadoTarea;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -219,5 +221,83 @@ public class TareaWebTest {
 
         this.mockMvc.perform(get(urlListado))
                 .andExpect(content().string(containsString("Limpiar cristales coche")));
+    }
+
+    // Test: el dueño cambia el estado de su tarea y se guarda en la BD
+    @Test
+    public void postEstadoTareaPropiaCambiaEstadoYRedirige() throws Exception {
+        // GIVEN un usuario logeado con dos tareas
+        Map<String, Long> ids = addUsuarioTareasBD();
+        Long usuarioId = ids.get("usuarioId");
+        Long tareaId = ids.get("tareaId");
+        when(managerUserSession.usuarioLogeado()).thenReturn(usuarioId);
+
+        // WHEN, THEN cambiamos el estado y se redirige a su listado de tareas
+        this.mockMvc.perform(post("/tareas/" + tareaId + "/estado")
+                        .param("estado", "COMPLETADA"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/usuarios/" + usuarioId + "/tareas"));
+
+        // y el estado queda guardado en la BD
+        assertThat(tareaService.findById(tareaId).getEstado()).isEqualTo(EstadoTarea.COMPLETADA);
+    }
+
+    // Test: otro usuario no puede cambiar el estado de una tarea personal que no es suya
+    @Test
+    public void postEstadoTareaDeOtroUsuarioDevuelve401() throws Exception {
+        // GIVEN una tarea personal y un usuario logeado que NO es su dueño
+        Map<String, Long> ids = addUsuarioTareasBD();
+        Long tareaId = ids.get("tareaId");
+        when(managerUserSession.usuarioLogeado()).thenReturn(ids.get("usuarioId") + 1);
+
+        // WHEN, THEN no está autorizado
+        this.mockMvc.perform(post("/tareas/" + tareaId + "/estado")
+                        .param("estado", "COMPLETADA"))
+                .andExpect(status().isUnauthorized());
+
+        // y el estado no ha cambiado
+        assertThat(tareaService.findById(tareaId).getEstado()).isEqualTo(EstadoTarea.PENDIENTE);
+    }
+
+    // Test: sin iniciar sesión no se puede cambiar el estado de una tarea
+    @Test
+    public void postEstadoSinLoginDevuelve401() throws Exception {
+        // GIVEN una tarea y nadie logeado
+        Long tareaId = addUsuarioTareasBD().get("tareaId");
+        when(managerUserSession.usuarioLogeado()).thenReturn(null);
+
+        // WHEN, THEN
+        this.mockMvc.perform(post("/tareas/" + tareaId + "/estado")
+                        .param("estado", "COMPLETADA"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // Test: cambiar el estado de una tarea que no existe devuelve error 404
+    @Test
+    public void postEstadoTareaInexistenteDevuelve404() throws Exception {
+        // GIVEN un usuario logeado
+        Long usuarioId = addUsuarioTareasBD().get("usuarioId");
+        when(managerUserSession.usuarioLogeado()).thenReturn(usuarioId);
+
+        // WHEN, THEN cambiar una tarea que no existe devuelve 404
+        this.mockMvc.perform(post("/tareas/999/estado")
+                        .param("estado", "COMPLETADA"))
+                .andExpect(status().isNotFound());
+    }
+
+    // Test: el listado de tareas muestra el estado y el formulario para cambiarlo
+    @Test
+    public void listaTareasMuestraEstadoYFormulario() throws Exception {
+        // GIVEN un usuario logeado con dos tareas (empiezan en PENDIENTE)
+        Map<String, Long> ids = addUsuarioTareasBD();
+        Long usuarioId = ids.get("usuarioId");
+        when(managerUserSession.usuarioLogeado()).thenReturn(usuarioId);
+
+        // WHEN, THEN el listado muestra el estado y el formulario para cambiarlo
+        this.mockMvc.perform(get("/usuarios/" + usuarioId + "/tareas"))
+                .andExpect(content().string(allOf(
+                        containsString("Pendiente"),
+                        containsString("action=\"/tareas/" + ids.get("tareaId") + "/estado\"")
+                )));
     }
 }

@@ -15,11 +15,12 @@
 
     <div class="row mt-3">
         <div class="col">
-            <table class="table table-striped">
+            <table class="table table-striped" style="overflow: visible">
                 <thead>
                 <tr>
                     <th>Id</th>
                     <th>Tarea</th>
+                    <th>Estado</th>
                     <th>Acción</th>
                 </tr>
                 </thead>
@@ -27,6 +28,30 @@
                 <tr th:each="tarea: ${tareas}">
                     <td th:text="${tarea.id}"></td>
                     <td th:text="${tarea.titulo}"></td>
+                    <td>
+                        <div class="dropdown">
+                            <!-- La etiqueta de color es el botón que abre el menú -->
+                            <button type="button" class="badge border-0 dropdown-toggle"
+                                    th:classappend="${tarea.estado.toString() == 'COMPLETADA'} ? 'badge-success'
+                              : (${tarea.estado.toString() == 'EN_PROGRESO'} ? 'badge-warning' : 'badge-secondary')"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span th:switch="${tarea.estado.toString()}">
+                                    <span th:case="'PENDIENTE'">Pendiente</span>
+                                    <span th:case="'EN_PROGRESO'">En progreso</span>
+                                    <span th:case="'COMPLETADA'">Completada</span>
+                                </span>
+                            </button>
+
+                            <!-- Cada opción es un botón que envía el formulario con su estado -->
+                            <div class="dropdown-menu">
+                                <form method="post" class="d-inline w-100" th:action="@{/tareas/{id}/estado(id=${tarea.id})}">
+                                    <button type="submit" name="estado" value="PENDIENTE" class="dropdown-item">Pendiente</button>
+                                    <button type="submit" name="estado" value="EN_PROGRESO" class="dropdown-item">En progreso</button>
+                                    <button type="submit" name="estado" value="COMPLETADA" class="dropdown-item">Completada</button>
+                                </form>
+                            </div>
+                        </div>
+                    </td>
                     <td><a class="btn btn-primary btn-xs" th:href="@{/tareas/{id}/editar(id=${tarea.id})}"/>editar</a>
                         <button class="btn btn-danger btn-xs" onmouseover="" style="cursor: pointer;"
                            th:onclick="'del(\'/tareas/' + ${tarea.id} + '\')'">borrar</button>
