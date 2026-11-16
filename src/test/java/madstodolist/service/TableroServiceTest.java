@@ -49,4 +49,19 @@ public class TableroServiceTest {
             tableroService.modificarTablero(tablero.getId(), "");
         });
     }
+
+    @Test
+    public void borrarTableroLoEliminaDeLaBD() {
+        // GIVEN: Un equipo y un tablero creado
+        EquipoData equipo = equipoService.crearEquipo("Equipo MADS");
+        TableroData tablero = tableroService.crearTablero(equipo.getId(), "Tablero Temporal");
+
+        // WHEN: Borramos el tablero
+        tableroService.borrarTablero(tablero.getId());
+
+        // THEN: Al intentar recuperarlo lanza IllegalArgumentException ("Tablero no encontrado")
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            tableroService.recuperarTablero(tablero.getId());
+        });
+    }
 }
