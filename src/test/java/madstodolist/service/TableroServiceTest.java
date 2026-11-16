@@ -64,4 +64,12 @@ public class TableroServiceTest {
             tableroService.recuperarTablero(tablero.getId());
         });
     }
+
+    @Test
+    public void borrarTableroInexistenteLanzaExcepcion() {
+        // WHEN & THEN: Intentar borrar un tablero que no existe lanza IllegalArgumentException
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            tableroService.borrarTablero(999L);
+        });
+    }
 }
