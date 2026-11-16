@@ -3,6 +3,7 @@ package madstodolist.service;
 import madstodolist.dto.EquipoData;
 import madstodolist.dto.TableroData;
 import madstodolist.dto.UsuarioData;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,7 +23,7 @@ public class TableroServiceTest {
 
     @Autowired
     private EquipoService equipoService;
-    
+
     @Test
     public void modificarTableroCambiaElNombre() {
         // GIVEN: Un equipo y un tablero creado dentro de ese equipo
@@ -35,5 +36,17 @@ public class TableroServiceTest {
         // THEN: Al recuperarlo tiene el nuevo nombre
         TableroData tableroModificado = tableroService.recuperarTablero(tablero.getId());
         assertThat(tableroModificado.getNombre()).isEqualTo("Tablero Sprint 1 Actualizado");
+    }
+
+    @Test
+    public void modificarTableroConNombreVacioLanzaExcepcion() {
+        // GIVEN: Un equipo y un tablero válido
+        EquipoData equipo = equipoService.crearEquipo("Equipo MADS");
+        TableroData tablero = tableroService.crearTablero(equipo.getId(), "Tablero Original");
+
+        // WHEN & THEN: Pasar un nombre vacío o nulo lanza IllegalArgumentException
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            tableroService.modificarTablero(tablero.getId(), "");
+        });
     }
 }

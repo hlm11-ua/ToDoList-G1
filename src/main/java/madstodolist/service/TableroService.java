@@ -83,4 +83,19 @@ public class TableroService {
         Long equipoId = tablero.getEquipo().getId();
         return equipoService.usuariosEquipo(equipoId);
     }
+
+    @Transactional
+    public TableroData modificarTablero(Long idTablero, String nuevoNombre) {
+        if (nuevoNombre == null || nuevoNombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre del tablero no puede estar vacío");
+        }
+
+        Tablero tablero = tableroRepository.findById(idTablero)
+                .orElseThrow(() -> new IllegalArgumentException("Tablero no encontrado"));
+
+        tablero.setNombre(nuevoNombre);
+        tableroRepository.save(tablero);
+
+        return new TableroData(tablero.getId(), tablero.getNombre());
+    }
 }
