@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import madstodolist.model.EstadoTarea;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;
@@ -117,6 +119,74 @@ public class TareaController {
 
         tareaService.borraTarea(idTarea);
         return "";
+    }
+
+    @PostMapping("/tableros/{id}/tareas/nueva")
+    public String nuevaTareaTablero(@PathVariable("id") Long idTablero, @RequestParam("titulo") String titulo, @RequestParam("estado") EstadoTarea estado) {
+        Long idUsuario = managerUserSession.usuarioLogeado();
+        if (idUsuario == null) {
+            throw new UsuarioNoLogeadoException();
+        }
+
+        tareaService.nuevaTareaTablero(idTablero, idUsuario, titulo, estado);
+
+        return "redirect:/tableros/" + idTablero;
+    }
+
+    @PostMapping("/tableros/tareas/{id}/asignar")
+    public String asignarUsuarioATarea(@PathVariable("id") Long idTarea, @RequestParam("usuarioId") Long usuarioId) {
+        Long idUsuarioLogeado = managerUserSession.usuarioLogeado();
+        if (idUsuarioLogeado == null) {
+            throw new UsuarioNoLogeadoException();
+        }
+
+        TareaData tarea = tareaService.findById(idTarea);
+        if (tarea == null || tarea.getTableroId() == null) {
+            throw new TareaNotFoundException();
+        }
+
+        tareaService.asignarUsuarioATarea(idTarea, usuarioId);
+        return "redirect:/tableros/" + tarea.getTableroId();
+    }
+
+    @PostMapping("/tableros/tareas/{id}/desasignar")
+    public String desasignarUsuarioDeTarea(@PathVariable("id") Long idTarea) {
+        Long idUsuarioLogeado = managerUserSession.usuarioLogeado();
+        if (idUsuarioLogeado == null) {
+            throw new UsuarioNoLogeadoException();
+        }
+
+        TareaData tarea = tareaService.findById(idTarea);
+        if (tarea == null || tarea.getTableroId() == null) {
+            throw new TareaNotFoundException();
+        }
+
+        tareaService.desasignarUsuarioDeTarea(idTarea);
+        return "redirect:/tableros/" + tarea.getTableroId();
+    }
+
+    //para Modificar Estado de tareas (board de equipo y personal)
+    @PostMapping("/tareas/{id}/estado")
+    public String cambiarEstadoTarea(@PathVariable(value = "id") Long idTarea,
+                                     @RequestParam("estado") EstadoTarea estado) {
+        TareaData tarea = tareaService.findById(idTarea);
+        if (tarea == null) {
+            throw new TareaNotFoundException();
+        }
+
+        if (tarea.getTableroId() != null) {
+            // Tarea de tablero: cualquier usuario logeado puede moverla
+            if (managerUserSession.usuarioLogeado() == null) {
+                throw new UsuarioNoLogeadoException();
+            }
+            tareaService.modificaEstado(idTarea, estado);
+            return "redirect:/tableros/" + tarea.getTableroId();
+        }
+
+        // Tarea personal: solo su dueño
+        comprobarUsuarioLogeado(tarea.getUsuarioId());
+        tareaService.modificaEstado(idTarea, estado);
+        return "redirect:/usuarios/" + tarea.getUsuarioId() + "/tareas";
     }
 }
 

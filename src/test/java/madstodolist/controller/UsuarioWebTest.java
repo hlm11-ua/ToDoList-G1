@@ -16,6 +16,8 @@ import org.springframework.web.server.ResponseStatusException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -144,6 +146,10 @@ public class UsuarioWebTest {
         admin.setId(99L);
         admin.setAdmin(true);
         when(usuarioService.findById(99L)).thenReturn(admin);
+        UsuarioData normal = new UsuarioData();
+        normal.setId(1L);
+        normal.setAdmin(false);
+        when(usuarioService.findById(1L)).thenReturn(normal);
 
         this.mockMvc.perform(post("/registrados/1/bloqueo")
                         .session(new MockHttpSession()))
@@ -156,6 +162,68 @@ public class UsuarioWebTest {
         this.mockMvc.perform(post("/registrados/1/bloqueo").session(session))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/registrados"));
+    }
+
+    private MockHttpSession sesionAdminConOtroAdmin() {
+        UsuarioData admin = new UsuarioData();
+        admin.setId(99L);
+        admin.setAdmin(true);
+        when(usuarioService.findById(99L)).thenReturn(admin);
+
+        UsuarioData otroAdmin = new UsuarioData();
+        otroAdmin.setId(2L);
+        otroAdmin.setAdmin(true);
+        when(usuarioService.findById(2L)).thenReturn(otroAdmin);
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("idUsuarioLogeado", 99L);
+        return session;
+    }
+
+    @Test
+    public void noSePuedeBloquearAUnAdmin() throws Exception {
+        MockHttpSession session = sesionAdminConOtroAdmin();
+
+        this.mockMvc.perform(post("/registrados/2/bloquear").session(session))
+                .andExpect(status().isForbidden());
+
+        verify(usuarioService, never()).bloquear(2L);
+    }
+
+    @Test
+    public void noSePuedeCambiarBloqueoDeUnAdmin() throws Exception {
+        MockHttpSession session = sesionAdminConOtroAdmin();
+
+        this.mockMvc.perform(post("/registrados/2/bloqueo").session(session))
+                .andExpect(status().isForbidden());
+
+        verify(usuarioService, never()).cambiarBloqueo(2L);
+    }
+
+    @Test
+    public void adminPuedeBloquearAUsuarioNormal() throws Exception {
+        MockHttpSession session = sesionAdminConOtroAdmin();
+        UsuarioData normal = new UsuarioData();
+        normal.setId(1L);
+        normal.setAdmin(false);
+        when(usuarioService.findById(1L)).thenReturn(normal);
+
+        this.mockMvc.perform(post("/registrados/1/bloquear").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrados"));
+
+        verify(usuarioService).bloquear(1L);
+    }
+
+    @Test
+    public void bloquearUsuarioInexistenteDevuelveNotFound() throws Exception {
+        MockHttpSession session = sesionAdminConOtroAdmin();
+        when(usuarioService.findById(50L)).thenReturn(null);
+
+        this.mockMvc.perform(post("/registrados/50/bloquear").session(session))
+                .andExpect(status().isNotFound());
+
+        verify(usuarioService, never()).bloquear(50L);
     }
 
     @Test

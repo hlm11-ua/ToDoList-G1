@@ -2,6 +2,7 @@ package madstodolist.dto;
 
 import java.io.Serializable;
 import java.util.Objects;
+import madstodolist.model.EstadoTarea;
 
 // Data Transfer Object para la clase Tarea
 public class TareaData implements Serializable {
@@ -11,6 +12,11 @@ public class TareaData implements Serializable {
     private Long id;
     private String titulo;
     private Long usuarioId;  // Esta es la ID del usuario asociado
+
+    private Long tableroId;
+    private Long usuarioAsignadoId;
+    private String usuarioAsignadoNombre;
+    private EstadoTarea estado;
 
     // Getters y setters
 
@@ -36,6 +42,38 @@ public class TareaData implements Serializable {
 
     public void setUsuarioId(Long usuarioId) {
         this.usuarioId = usuarioId;
+    }
+
+    public Long getTableroId() {
+        return tableroId;
+    }
+
+    public void setTableroId(Long tableroId) {
+        this.tableroId = tableroId;
+    }
+
+    public Long getUsuarioAsignadoId() {
+        return usuarioAsignadoId;
+    }
+
+    public void setUsuarioAsignadoId(Long usuarioAsignadoId) {
+        this.usuarioAsignadoId = usuarioAsignadoId;
+    }
+
+    public String getUsuarioAsignadoNombre() {
+        return usuarioAsignadoNombre;
+    }
+
+    public void setUsuarioAsignadoNombre(String usuarioAsignadoNombre) {
+        this.usuarioAsignadoNombre = usuarioAsignadoNombre;
+    }
+
+    public EstadoTarea getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoTarea estado) {
+        this.estado = estado;
     }
 
     // Sobreescribimos equals y hashCode para que dos tareas sean iguales

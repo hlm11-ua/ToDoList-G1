@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import madstodolist.model.Tablero;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ public class EquipoTest {
     private EquipoRepository equipoRepository;
     @Autowired
     private UsuarioRepository usuarioRepository;
+    @Autowired
+    private TableroRepository tableroRepository;
 
     @Test
     public void crearEquipo() {
@@ -118,6 +121,26 @@ public class EquipoTest {
 
         // THEN
         assertThat(equipos).hasSize(2);
+    }
+
+    @Test
+    @Transactional
+    public void guardarEquipoConTablero() {
+        // GIVEN
+        Equipo equipo = new Equipo("Proyecto P1");
+        Tablero tablero = new Tablero("T1");
+        equipo.addTablero(tablero);
+
+        // WHEN
+        equipoRepository.save(equipo);
+
+        // THEN
+        assertThat(tablero.getId()).isNotNull();
+
+        Tablero tableroBD = tableroRepository.findById(tablero.getId()).orElse(null);
+        assertThat(tableroBD).isNotNull();
+        assertThat(tableroBD.getNombre()).isEqualTo("T1");
+        assertThat(tableroBD.getEquipo().getId()).isEqualTo(equipo.getId());
     }
 
 }

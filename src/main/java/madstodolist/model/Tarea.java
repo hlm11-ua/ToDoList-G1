@@ -5,6 +5,9 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.Objects;
 
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+
 @Entity
 @Table(name = "tareas")
 public class Tarea implements Serializable {
@@ -24,6 +27,19 @@ public class Tarea implements Serializable {
     // el ID del usuario con el que está asociado una tarea
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
+
+    // usuario asignado en el tablero
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_asignado_id")
+    private Usuario usuarioAsignado;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tablero_id")
+    private Tablero tablero;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoTarea estado = EstadoTarea.PENDIENTE;
 
     // Constructor vacío necesario para JPA/Hibernate.
     // No debe usarse desde la aplicación.
@@ -68,6 +84,40 @@ public class Tarea implements Serializable {
             // Añade la tarea a la lista de tareas del usuario
             usuario.addTarea(this);
         }
+    }
+
+    public Tablero getTablero() {
+        return tablero;
+    }
+
+    public void setTablero(Tablero tablero) {
+        if (this.tablero != tablero) {
+            if (this.tablero != null) {
+                this.tablero.getTareas().remove(this);
+            }
+
+            this.tablero = tablero;
+
+            if (tablero != null && !tablero.getTareas().contains(this)) {
+                tablero.getTareas().add(this);
+            }
+        }
+    }
+
+    public Usuario getUsuarioAsignado() {
+        return usuarioAsignado;
+    }
+
+    public void setUsuarioAsignado(Usuario usuarioAsignado) {
+        this.usuarioAsignado = usuarioAsignado;
+    }
+
+    public EstadoTarea getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoTarea estado) {
+        this.estado = estado;
     }
 
     @Override

@@ -1,8 +1,8 @@
 package madstodolist.service;
 
-import madstodolist.model.Tarea;
+import madstodolist.model.*;
+import madstodolist.repository.TableroRepository;
 import madstodolist.repository.TareaRepository;
-import madstodolist.model.Usuario;
 import madstodolist.repository.UsuarioRepository;
 import madstodolist.dto.TareaData;
 import org.slf4j.Logger;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.modelmapper.ModelMapper;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,6 +28,10 @@ public class TareaService {
     private UsuarioRepository usuarioRepository;
     @Autowired
     private TareaRepository tareaRepository;
+
+    @Autowired
+    private TableroRepository tableroRepository;
+
     @Autowired
     private ModelMapper modelMapper;
 
@@ -96,5 +101,102 @@ public class TareaService {
             throw new TareaServiceException("No existe tarea o usuario id");
         }
         return usuario.getTareas().contains(tarea);
+    }
+
+    @Transactional
+    public TareaData nuevaTareaTablero(Long idTablero, Long idUsuario, String titulo, EstadoTarea estado) {
+        if (titulo == null || titulo.trim().isEmpty()) {
+            throw new TareaServiceException("El título de la tarea no puede estar vacío");
+        }
+
+        Tablero tablero = tableroRepository.findById(idTablero).orElse(null);
+        if (tablero == null) {
+            throw new TareaServiceException("No existe el tablero");
+        }
+
+        Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
+        if (usuario == null) {
+            throw new TareaServiceException("No existe el usuario");
+        }
+
+        Tarea tarea = new Tarea(usuario, titulo.trim());
+        tarea.setTablero(tablero);
+        tarea.setEstado(estado == null ? EstadoTarea.PENDIENTE : estado);
+
+        tareaRepository.save(tarea);
+
+        TareaData resultado = new TareaData();
+        resultado.setId(tarea.getId());
+        resultado.setTitulo(tarea.getTitulo());
+        resultado.setTableroId(tablero.getId());
+        resultado.setEstado(tarea.getEstado());
+        resultado.setUsuarioAsignadoId(tarea.getUsuarioAsignado() == null ? null : tarea.getUsuarioAsignado().getId());
+
+        return resultado;
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<TareaData> tareasTablero(Long idTablero) {
+        List<Tarea> tareas = tareaRepository.findByTablero_IdOrderByIdAsc(idTablero);
+        List<TareaData> resultado = new ArrayList<>();
+
+        for (Tarea tarea : tareas) {
+            TareaData tareaData = new TareaData();
+            tareaData.setId(tarea.getId());
+            tareaData.setTitulo(tarea.getTitulo());
+            tareaData.setTableroId(idTablero);
+            tareaData.setEstado(tarea.getEstado());
+
+            if (tarea.getUsuarioAsignado() != null) {
+                tareaData.setUsuarioAsignadoId(tarea.getUsuarioAsignado().getId());
+                tareaData.setUsuarioAsignadoNombre(tarea.getUsuarioAsignado().getNombre());
+            }
+
+            resultado.add(tareaData);
+        }
+        return resultado;
+    }
+
+    @Transactional
+    public void asignarUsuarioATarea(Long tareaId, Long usuarioId) {
+        Tarea tarea = tareaRepository.findById(tareaId).orElseThrow(() -> new TareaServiceException("La tarea no existe"));
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow(() -> new TareaServiceException("El usuario no existe"));
+
+        if (tarea.getTablero() == null || tarea.getTablero().getEquipo() == null) {
+            throw new TareaServiceException("La tarea no pertenece a un tablero de un equipo");
+        }
+
+        Equipo equipo = tarea.getTablero().getEquipo();
+
+        if (!equipo.getUsuarios().contains(usuario)) {
+            throw new TareaServiceException(
+                    "El usuario no pertenece al equipo del tablero");
+        }
+
+        tarea.setUsuarioAsignado(usuario);
+        tareaRepository.save(tarea);
+    }
+
+    @Transactional
+    public void desasignarUsuarioDeTarea(Long tareaId) {
+        Tarea tarea = tareaRepository.findById(tareaId).orElseThrow(() -> new TareaServiceException("La tarea no existe"));
+
+        tarea.setUsuarioAsignado(null);
+        tareaRepository.save(tarea);
+    }
+
+    @Transactional
+    public TareaData modificaEstado(Long idTarea, EstadoTarea nuevoEstado){
+        Tarea tarea = tareaRepository.findById(idTarea).orElse(null);
+       if(tarea == null){
+           throw new TareaServiceException("Id " + idTarea + " no existe");
+       }
+       if(nuevoEstado == null){
+           throw new TareaServiceException("El estado de la tarea no puede ser " + nuevoEstado);
+       }
+        tarea.setEstado(nuevoEstado);
+        tareaRepository.save(tarea);
+        return modelMapper.map(tarea, TareaData.class);
     }
 }

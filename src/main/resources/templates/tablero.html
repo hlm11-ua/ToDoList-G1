@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments :: head (titulo='Tablero')}"></head>
+<body>
+<div class="container mt-5">
+    <div th:replace="~{fragments :: navbar}"></div>
+    <h2 class="mb-4" th:text="${tablero.nombre}">Nombre tablero</h2>
+
+    <div class="form-check mb-3">
+        <input class="form-check-input"
+               type="checkbox"
+               id="filtrar-mis-tareas"
+               th:attr="data-usuario-logeado-id=${usuarioLogeadoId}"/>
+        <label class="form-check-label" for="filtrar-mis-tareas">
+            Filtrar por mis tareas
+        </label>
+    </div>
+
+    <!-- Columnas del tablero -->
+    <div class="row g-3">
+        <!-- Pendiente -->
+        <div class="col-md-4 tablero-columna" id="columna-pendiente" data-estado="PENDIENTE">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">Pendiente</h6>
+                </div>
+                <div class="card-body">
+                    <div th:each="tarea : ${tareas}"
+                         th:if="${tarea.estado.toString() == 'PENDIENTE'}"
+                         class="tarea-card card mb-2"
+                         draggable="true"
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId},data-tarea-id=${tarea.id}">
+                        <div class="card-body py-2"
+                             th:text="${tarea.titulo}">
+                            Título de la tarea
+                        </div>
+
+                        <div class="panel-asignacion"
+                             style="display: none;">
+                            <!-- Si no hay usuario asignado, mostramos el formulario -->
+                            <div th:if="${tarea.usuarioAsignadoId == null}">
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/asignar(id=${tarea.id})}">
+
+                                    <label class="form-label">
+                                        Asignar usuario:
+                                    </label>
+
+                                    <select name="usuarioId"
+                                            class="form-select form-select-sm mb-2"
+                                            required="required">
+
+                                        <option value="">Selecciona un usuario</option>
+
+                                        <option th:each="usuario : ${usuariosEquipo}"
+                                                th:value="${usuario.id}"
+                                                th:text="${usuario.nombre}">
+                                        </option>
+                                    </select>
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm">
+                                        Asignar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Si ya hay usuario asignado, mostramos su nombre -->
+                            <div th:if="${tarea.usuarioAsignadoId != null}">
+                                <p class="mb-2">
+                                    Usuario asignado:
+                                    <strong th:text="${tarea.usuarioAsignadoNombre}">
+                                        Nombre del usuario
+                                    </strong>
+                                </p>
+
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/desasignar(id=${tarea.id})}">
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Desasignar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zona-anadir">
+                        <div class="boton-anadir"
+                             role="button"
+                             tabindex="0">
+                            + Añadir una tarea
+                        </div>
+
+                        <form class="formulario-tarea"
+                              th:action="@{/tableros/{id}/tareas/nueva(id=${tablero.id})}"
+                              method="post"
+                              style="display: none;">
+
+                            <input type="hidden"
+                                   name="estado"
+                                   value="PENDIENTE"/>
+
+                            <textarea name="titulo"
+                                      class="form-control mb-2"
+                                      rows="2"
+                                      placeholder="Introduzca un título"
+                                      required = "required"></textarea>
+
+                            <button type="submit"
+                                    class="btn btn-primary btn-sm">
+                                Añadir tarea
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-light btn-sm cancelar-anadir">
+                                Cancelar
+                            </button>
+
+                            <div class="error-tarea text-danger mt-2"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- En progreso -->
+        <div class="col-md-4 tablero-columna" id="columna-en-progreso" data-estado="EN_PROGRESO">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">En progreso</h6>
+                </div>
+                <div class="card-body">
+                    <div th:each="tarea : ${tareas}"
+                         th:if="${tarea.estado.toString() == 'EN_PROGRESO'}"
+                         class="tarea-card card mb-2"
+                         draggable="true"
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId},data-tarea-id=${tarea.id}">
+                        <div class="card-body py-2"
+                             th:text="${tarea.titulo}">
+                            Título de la tarea
+                        </div>
+                        <div class="panel-asignacion"
+                             style="display: none;">
+                            <!-- Si no hay usuario asignado, mostramos el formulario -->
+                            <div th:if="${tarea.usuarioAsignadoId == null}">
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/asignar(id=${tarea.id})}">
+
+                                    <label class="form-label">
+                                        Asignar usuario:
+                                    </label>
+
+                                    <select name="usuarioId"
+                                            class="form-select form-select-sm mb-2"
+                                            required="required">
+
+                                        <option value="">Selecciona un usuario</option>
+
+                                        <option th:each="usuario : ${usuariosEquipo}"
+                                                th:value="${usuario.id}"
+                                                th:text="${usuario.nombre}">
+                                        </option>
+                                    </select>
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm">
+                                        Asignar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Si ya hay usuario asignado, mostramos su nombre -->
+                            <div th:if="${tarea.usuarioAsignadoId != null}">
+                                <p class="mb-2">
+                                    Usuario asignado:
+                                    <strong th:text="${tarea.usuarioAsignadoNombre}">
+                                        Nombre del usuario
+                                    </strong>
+                                </p>
+
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/desasignar(id=${tarea.id})}">
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Desasignar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zona-anadir">
+                        <div class="boton-anadir"
+                             role="button"
+                             tabindex="0">
+                            + Añadir una tarea
+                        </div>
+
+                        <form class="formulario-tarea"
+                              th:action="@{/tableros/{id}/tareas/nueva(id=${tablero.id})}"
+                              method="post"
+                              style="display: none;">
+
+                            <input type="hidden"
+                                   name="estado"
+                                   value="EN_PROGRESO"/>
+
+                            <textarea name="titulo"
+                                      class="form-control mb-2"
+                                      rows="2"
+                                      placeholder="Introduzca un título"
+                                      required = "required"></textarea>
+
+                            <button type="submit"
+                                    class="btn btn-primary btn-sm">
+                                Añadir tarea
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-light btn-sm cancelar-anadir">
+                                Cancelar
+                            </button>
+
+                            <div class="error-tarea text-danger mt-2"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completada -->
+        <div class="col-md-4 tablero-columna" id="columna-completada" data-estado="COMPLETADA">            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">Completada</h6>
+                </div>
+                <div class="card-body">
+                    <div th:each="tarea : ${tareas}"
+                         th:if="${tarea.estado.toString() == 'COMPLETADA'}"
+                         class="tarea-card card mb-2"
+                         draggable="true"
+                         th:attr="data-usuario-asignado-id=${tarea.usuarioAsignadoId},data-tarea-id=${tarea.id}">
+                        <div class="card-body py-2"
+                             th:text="${tarea.titulo}">
+                            Título de la tarea
+                        </div>
+                        <div class="panel-asignacion"
+                             style="display: none;">
+                            <!-- Si no hay usuario asignado, mostramos el formulario -->
+                            <div th:if="${tarea.usuarioAsignadoId == null}">
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/asignar(id=${tarea.id})}">
+
+                                    <label class="form-label">
+                                        Asignar usuario:
+                                    </label>
+
+                                    <select name="usuarioId"
+                                            class="form-select form-select-sm mb-2"
+                                            required="required">
+
+                                        <option value="">Selecciona un usuario</option>
+
+                                        <option th:each="usuario : ${usuariosEquipo}"
+                                                th:value="${usuario.id}"
+                                                th:text="${usuario.nombre}">
+                                        </option>
+                                    </select>
+
+                                    <button type="submit"
+                                            class="btn btn-primary btn-sm">
+                                        Asignar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Si ya hay usuario asignado, mostramos su nombre -->
+                            <div th:if="${tarea.usuarioAsignadoId != null}">
+                                <p class="mb-2">
+                                    Usuario asignado:
+                                    <strong th:text="${tarea.usuarioAsignadoNombre}">
+                                        Nombre del usuario
+                                    </strong>
+                                </p>
+
+                                <form method="post"
+                                      th:action="@{/tableros/tareas/{id}/desasignar(id=${tarea.id})}">
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger btn-sm">
+                                        Desasignar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="zona-anadir">
+                        <div class="boton-anadir"
+                             role="button"
+                             tabindex="0">
+                            + Añadir una tarea
+                        </div>
+
+                        <form class="formulario-tarea"
+                              th:action="@{/tableros/{id}/tareas/nueva(id=${tablero.id})}"
+                              method="post"
+                              style="display: none;">
+
+                            <input type="hidden"
+                                   name="estado"
+                                   value="COMPLETADA"/>
+
+                            <textarea name="titulo"
+                                      class="form-control mb-2"
+                                      rows="2"
+                                      placeholder="Introduzca un título"
+                                      required = "required"></textarea>
+
+                            <button type="submit"
+                                    class="btn btn-primary btn-sm">
+                                Añadir tarea
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-light btn-sm cancelar-anadir">
+                                Cancelar
+                            </button>
+
+                            <div class="error-tarea text-danger mt-2"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .tablero-columna > .card > .card-body {
+        min-height: 180px;
+    }
+    .zona-anadir {
+        margin-top: 12px;
+    }
+    .boton-anadir {
+        background-color: #dce8f5;
+        color: #315b83;
+        padding: 10px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .boton-anadir:hover {
+        background-color: #c5dbf1;
+    }
+    .boton-anadir:focus {
+        outline: 2px solid #6c9dcc;
+        outline-offset: 2px;
+    }
+    .formulario-tarea {
+        background-color: #f1f2f4;
+        padding: 10px;
+        border-radius: 6px;
+    }
+    .formulario-tarea textarea {
+        resize: vertical;
+    }
+    .tarea-card {
+        cursor: pointer;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .tarea-card:hover {
+        background-color: #e8f1fb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .tarea-card:hover > .card-body {
+        background-color: #e8f1fb;
+    }
+
+    .panel-asignacion {
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
+
+    .panel-asignacion > div {
+        all: unset;
+        display: block;
+    }
+
+    .panel-asignacion form {
+        all: unset;
+        display: block;
+    }
+
+    .tarea-card.arrastrando {
+        opacity: 0.5;
+    }
+
+    .tablero-columna .card-body {
+        transition: background-color 0.2s ease;
+    }
+
+    .tablero-columna .card-body.zona-soltar {
+        background-color: #e8f1fb;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Filtramos las tareas asignadas al usuario que ha iniciado sesión
+        const filtroMisTareas = document.getElementById("filtrar-mis-tareas");
+        filtroMisTareas.addEventListener("change", function () {
+            const usuarioLogeadoId = filtroMisTareas.dataset.usuarioLogeadoId;
+            document.querySelectorAll(".tarea-card").forEach(function (tarjeta) {
+                const usuarioAsignadoId = tarjeta.dataset.usuarioAsignadoId;
+                if (filtroMisTareas.checked) {
+                    tarjeta.style.display = usuarioAsignadoId === usuarioLogeadoId ? "" : "none";
+                } else {
+                    tarjeta.style.display = "";
+                }
+            });
+        });
+
+        // Permitimos arrastrar las tareas entre las columnas del tablero
+        let tareaArrastrada = null;
+
+        // Cuando empezamos a arrastrar una tarea
+        document.querySelectorAll(".tarea-card").forEach(function (tarjeta) {
+            tarjeta.addEventListener("dragstart", function (event) {
+                tareaArrastrada = tarjeta;
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", "tarea");
+                tarjeta.classList.add("arrastrando");
+            });
+
+            tarjeta.addEventListener("dragend", function () {
+                tarjeta.classList.remove("arrastrando");
+                tareaArrastrada = null;
+            });
+        });
+
+        // Permitimos soltar tareas en cualquiera de las columnas
+        document.querySelectorAll(".tablero-columna").forEach(function (columna) {
+            columna.addEventListener("dragover", function (event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+            });
+            columna.addEventListener("drop", function (event) {
+                event.preventDefault();
+                if (tareaArrastrada === null) {
+                    return;
+                }
+                const zonaTareas = columna.querySelector(".card-body");
+                const zonaAnadir = zonaTareas.querySelector(".zona-anadir");
+
+                // Colocamos la tarea antes del formulario para añadir tareas
+                zonaTareas.insertBefore(tareaArrastrada, zonaAnadir);
+
+                // Guardamos el nuevo estado en el servidor
+                const tareaId = tareaArrastrada.dataset.tareaId;
+                const nuevoEstado = columna.dataset.estado;
+
+                fetch("/tareas/" + tareaId + "/estado", {
+                    method: "POST",
+                    body: new URLSearchParams({ estado: nuevoEstado })
+                }).then(function (respuesta) {
+                    // Si el servidor no lo acepta, recargamos para mostrar el estado real
+                    if (!respuesta.ok) {
+                        window.location.reload();
+                    }
+                }).catch(function () {
+                    window.location.reload();
+                });
+            });
+        });
+
+        // Mostramos el formulario que aparece tras dar clic al añadir tarea en el tablero
+        document.querySelectorAll(".boton-anadir").forEach(function (boton) {
+            boton.addEventListener("click", function () {
+                const zona = boton.closest(".zona-anadir");
+                const formulario = zona.querySelector(".formulario-tarea");
+
+                boton.style.display = "none";
+                formulario.style.display = "block";
+                formulario.querySelector("textarea").focus();
+            });
+
+            boton.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    boton.click();
+                }
+            });
+        });
+
+        // Cancelamos la creación de una tarea
+        document.querySelectorAll(".cancelar-anadir").forEach(function (boton) {
+            boton.addEventListener("click", function () {
+                const formulario = boton.closest(".formulario-tarea");
+                const zona = formulario.closest(".zona-anadir");
+                const botonAnadir = zona.querySelector(".boton-anadir");
+
+                formulario.reset();
+                formulario.querySelector(".error-tarea").textContent = "";
+                formulario.style.display = "none";
+                botonAnadir.style.display = "block";
+            });
+        });
+
+        // Mostramos u ocultamos el panel de asignación al pulsar una tarea
+        document.querySelectorAll(".tarea-card").forEach(function(tarjeta) {
+            tarjeta.querySelector(".card-body").addEventListener("click", function() {
+                const panel = tarjeta.querySelector(".panel-asignacion");
+
+                panel.style.display =
+                    panel.style.display === "none" ? "block" : "none";
+            });
+        });
+
+        // Enviamos el formulario sin recargar ni abandonar el tablero
+        document.querySelectorAll(".formulario-tarea").forEach(function (formulario) {
+            formulario.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const campoTitulo = formulario.querySelector("textarea");
+                const titulo = campoTitulo.value.trim();
+                const error = formulario.querySelector(".error-tarea");
+
+                if (!titulo) {
+                    error.textContent = "Introduce un título para la tarea.";
+                    return;
+                }
+
+                const botonEnviar = formulario.querySelector(
+                    'button[type="submit"]'
+                );
+
+                botonEnviar.disabled = true;
+                error.textContent = "";
+
+                try {
+                    const respuesta = await fetch(formulario.action, {
+                        method: "POST",
+                        body: new FormData(formulario),
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        redirect: "follow"
+                    });
+
+                    if (!respuesta.ok) {
+                        throw new Error("No se pudo guardar la tarea.");
+                    }
+
+                    // Recargamos el tablero para obtener el ID de la tarea creada
+                    window.location.reload();
+                } catch (e) {
+                    error.textContent = "Error al guardar la tarea. Inténtalo de nuevo.";
+                } finally {
+                    botonEnviar.disabled = false;
+                }
+            });
+        });
+    });
+</script>
+<div th:replace="~{fragments :: javascript}"></div>
+</body>
+</html>
